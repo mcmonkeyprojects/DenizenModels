@@ -1,0 +1,3 @@
+[submodule "FreneticUtilities"]
+	path = FreneticUtilities
+	url = https://github.com/FreneticLLC/FreneticUtilities

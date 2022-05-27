@@ -5,6 +5,8 @@ VisualStudioVersion = 17.1.32319.34
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DenizenModelsConverter", "DenizenModelsConverter\DenizenModelsConverter.csproj", "{0BDC209C-275E-4D5D-A183-0A680EDE1FBF}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FreneticUtilities", "FreneticUtilities\FreneticUtilities\FreneticUtilities.csproj", "{1DB47D6A-4225-4F25-8559-2C6292496953}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{0BDC209C-275E-4D5D-A183-0A680EDE1FBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0BDC209C-275E-4D5D-A183-0A680EDE1FBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0BDC209C-275E-4D5D-A183-0A680EDE1FBF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DB47D6A-4225-4F25-8559-2C6292496953}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DB47D6A-4225-4F25-8559-2C6292496953}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DB47D6A-4225-4F25-8559-2C6292496953}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DB47D6A-4225-4F25-8559-2C6292496953}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
