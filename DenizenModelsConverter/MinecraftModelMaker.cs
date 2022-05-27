@@ -14,7 +14,7 @@ namespace DenizenModelsConverter
     {
         public static string CreateModelFor(BBModel model, BBModel.Outliner outline)
         {
-            JObject jout = new(), textures = new(), group = new();
+            JObject jout = new(), textures = new(), group = new(), display = new(), head = new();
             JArray groups = new(), elements = new();
             JArray childrenList = new();
             foreach (BBModel.Texture texture in model.Textures)
@@ -75,9 +75,12 @@ namespace DenizenModelsConverter
             group.Add("color", 0);
             group.Add("children", childrenList);
             groups.Add(group);
+            head.Add("translation", new JArray(8, 2, 8));
+            display.Add("head", head);
             jout.Add("textures", textures);
             jout.Add("elements", elements);
             jout.Add("groups", groups);
+            jout.Add("display", display);
             return jout.ToString();
         }
 

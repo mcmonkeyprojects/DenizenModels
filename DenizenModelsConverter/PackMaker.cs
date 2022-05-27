@@ -60,12 +60,15 @@ namespace DenizenModelsConverter
             JObject itemOverride = JObject.Parse(itemFile);
             JArray overrides = itemOverride.ContainsKey("overrides") ? (JArray)itemOverride.GetRequired("overrides") : new JArray();
             int min = 1000;
+            Dictionary<string, int> existingCmd = new();
             foreach (JObject obj in overrides)
             {
+                string modelName = (string)obj.GetRequired("model");
                 JObject predicate = obj.GetRequired("predicate") as JObject; 
                 if (predicate.ContainsKey("custom_model_data"))
                 {
                     int cmd = (int)predicate.GetRequired("custom_model_data");
+                    existingCmd[modelName] = cmd;
                     if (cmd >= min)
                     {
                         min = cmd + 1;
@@ -76,7 +79,6 @@ namespace DenizenModelsConverter
             JObject modelSet = new();
             foreach (BBModel.Outliner outline in model.Outlines)
             {
-                Debug($"Creating model for {modelPath}/{outline.Name} as {item}[custom_model_data={min}]");
                 string modelText = MinecraftModelMaker.CreateModelFor(model, outline);
                 if (modelText is null)
                 {
@@ -87,20 +89,28 @@ namespace DenizenModelsConverter
                     modelSet.Add(outline.UUID.ToString(), skippedEntry);
                     continue;
                 }
+                string modelName = $"{modelPath}/{outline.Name}";
+                bool reused = existingCmd.TryGetValue(modelName, out int id);
+                if (!reused)
+                {
+                    Debug($"Adding new custom_model_data for {modelName} as {min}");
+                    id = min++;
+                    JObject overrideEntry = new();
+                    overrideEntry.Add("model", $"{modelPath}/{outline.Name}");
+                    JObject predicate = new();
+                    predicate.Add("custom_model_data", id);
+                    overrideEntry.Add("predicate", predicate);
+                    overrides.Add(overrideEntry);
+                }
+                Debug($"Creating model for {modelName} as {item}[custom_model_data={id}]");
                 File.WriteAllText($"{fullModelPath}/{outline.Name}.json", modelText);
-                JObject overrideEntry = new();
-                overrideEntry.Add("model", $"{modelPath}/{outline.Name}");
-                JObject predicate = new();
-                predicate.Add("custom_model_data", min);
-                overrideEntry.Add("predicate", predicate);
-                overrides.Add(overrideEntry);
                 JObject modelEntry = new();
                 modelEntry.Add("name", outline.Name);
-                modelEntry.Add("item", $"{item}[custom_model_data={min}]");
+                modelEntry.Add("item", $"{item}[custom_model_data={id}]");
                 modelEntry.Add("origin", outline.Origin.ToDenizenString());
+                modelEntry.Add("rotation", outline.Rotation.ToDenizenString());
                 modelEntry.Add("pairs", new JArray(outline.Paired.Select(p => p.ToString()).ToArray()));
                 modelSet.Add(outline.UUID.ToString(), modelEntry);
-                min++;
             }
             Debug("Models done. Outputting new item override...");
             itemOverride.Remove("overrides");

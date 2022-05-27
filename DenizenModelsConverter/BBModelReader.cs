@@ -121,10 +121,29 @@ namespace DenizenModelsConverter
             }
             if (outliners is not null)
             {
+                BBModel.Outliner rootOutline = null;
                 Debug("contains outliners");
-                foreach (JObject jOutliner in outliners)
+                foreach (JToken jOutliner in outliners)
                 {
-                    ReadOutliner(result, jOutliner, outlineNames);
+                    if (jOutliner.Type == JTokenType.String)
+                    {
+                        if (rootOutline is null)
+                        {
+                            rootOutline = new()
+                            {
+                                Name = "__root__",
+                                Origin = new DoubleVector(),
+                                Rotation = new DoubleVector(),
+                                UUID = Guid.NewGuid()
+                            };
+                            result.Outlines.Add(rootOutline);
+                        }
+                        AddOutlineChild(result, rootOutline, jOutliner, outlineNames);
+                    }
+                    else
+                    {
+                        ReadOutliner(result, (JObject)jOutliner, outlineNames);
+                    }
                 }
             }
             if (animations is not null)
@@ -176,6 +195,48 @@ namespace DenizenModelsConverter
 
         public static HashSet<double> AcceptableRotations = new() { 0, 22.5, 45, -22.5, -45 };
 
+        public static void AddOutlineChild(BBModel model, BBModel.Outliner outline, JToken child, Dictionary<string, int> names)
+        {
+            if (child.Type == JTokenType.String)
+            {
+                Guid id = Guid.Parse((string)child);
+                BBModel.Element element = model.GetElement(id);
+                if (element is null)
+                {
+                    if (model.DiscardedIDs.Contains(id))
+                    {
+                        return;
+                    }
+                    throw new Exception($"Cannot find required element {id} for outline {outline.Name}");
+                }
+                if (AcceptableRotations.Contains(element.Rotation.X) && AcceptableRotations.Contains(element.Rotation.Y) && AcceptableRotations.Contains(element.Rotation.Z))
+                {
+                    outline.Children.Add(id);
+                }
+                else
+                {
+                    BBModel.Outliner specialSideOutline = new()
+                    {
+                        Name = $"{outline.Name}_auto_{element.Name}",
+                        Origin = element.Origin,
+                        Rotation = element.Rotation,
+                        UUID = Guid.NewGuid(),
+                    };
+                    element.Rotation = new DoubleVector();
+                    element.Origin = new DoubleVector();
+                    specialSideOutline.Children.Add(element.UUID);
+                    model.Outlines.Add(specialSideOutline);
+                    outline.Paired.Add(specialSideOutline.UUID);
+                }
+            }
+            else
+            {
+                BBModel.Outliner subLine = ReadOutliner(model, (JObject)child, names);
+                outline.Paired.Add(subLine.UUID);
+                outline.Paired.AddRange(subLine.Paired);
+            }
+        }
+
         public static BBModel.Outliner ReadOutliner(BBModel model, JObject jOutliner, Dictionary<string, int> names)
         {
             string name = (string)jOutliner.GetRequired("name");
@@ -194,47 +255,7 @@ namespace DenizenModelsConverter
             };
             foreach (JToken child in (JArray)jOutliner.GetRequired("children"))
             {
-                if (child.Type == JTokenType.String)
-                {
-                    Guid id = Guid.Parse((string)child);
-                    BBModel.Element element = model.GetElement(id);
-                    if (element is null)
-                    {
-                        if (model.DiscardedIDs.Contains(id))
-                        {
-                            continue;
-                        }
-                        throw new Exception($"Cannot find required element {id} for outline {outline.Name}");
-                    }
-                    if (AcceptableRotations.Contains(element.Rotation.X) && AcceptableRotations.Contains(element.Rotation.Y) && AcceptableRotations.Contains(element.Rotation.Z))
-                    {
-                        outline.Children.Add(id);
-                    }
-                    else
-                    {
-                        BBModel.Outliner specialSideOutline = new()
-                        {
-                            Name = $"{outline.Name}_auto_{element.Name}",
-                            Origin = outline.Origin + element.Origin,
-                            Rotation = element.Rotation,
-                            UUID = Guid.NewGuid(),
-                        };
-                        // TODO: Is this shift needed?
-                        //element.From -= element.Origin;
-                        //element.To -= element.Origin;
-                        element.Rotation = new DoubleVector();
-                        element.Origin = new DoubleVector();
-                        specialSideOutline.Children.Add(element.UUID);
-                        model.Outlines.Add(specialSideOutline);
-                        outline.Paired.Add(specialSideOutline.UUID);
-                    }
-                }
-                else
-                {
-                    BBModel.Outliner subLine = ReadOutliner(model, (JObject) child, names);
-                    outline.Paired.Add(subLine.UUID);
-                    outline.Paired.AddRange(subLine.Paired);
-                }
+                AddOutlineChild(model, outline, child, names);
             }
             Debug($"Read outliner {outline.Name}");
             model.Outlines.Add(outline);
@@ -250,7 +271,7 @@ namespace DenizenModelsConverter
         public static DoubleVector ParseDVecFromArr(JToken jVal)
         {
             JArray jArr = (JArray)jVal;
-            return new DoubleVector((int)jArr[0], (int)jArr[1], (int)jArr[2]);
+            return new DoubleVector((double)jArr[0], (double)jArr[1], (double)jArr[2]);
         }
 
         public static BBModel.Element.Face ParseFaceFromJson(JToken jVal)
