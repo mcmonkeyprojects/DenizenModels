@@ -38,6 +38,7 @@ namespace DenizenModelsConverter
             Debug("Core read, start body...");
             JArray elements = (JArray)data["elements"];
             JArray textures = (JArray)data["textures"];
+            JArray outliners = (JArray)data["outliner"];
             JArray animations = (JArray)data["animations"];
             if (elements is not null)
             {
@@ -57,11 +58,12 @@ namespace DenizenModelsConverter
                         Name = name,
                         Rescale = jElement.GetBool("rescale", false),
                         Locked = jElement.GetBool("locked", false),
-                        From = ParseIVecFromJson(jElement.GetRequired("from")),
-                        To = ParseIVecFromJson(jElement.GetRequired("to")),
+                        From = ParseDVecFromArr(jElement.GetRequired("from")),
+                        To = ParseDVecFromArr(jElement.GetRequired("to")),
                         AutoUV = (int)jElement.GetRequired("autouv"),
                         Color = (int)jElement.GetRequired("color"),
-                        Origin = ParseIVecFromJson(jElement.GetRequired("origin")),
+                        Rotation = jElement.ContainsKey("rotation") ? ParseDVecFromArr(jElement.GetRequired("rotation")) : new DoubleVector(),
+                        Origin = ParseDVecFromArr(jElement.GetRequired("origin")),
                         North = ParseFaceFromJson(jFaces.GetRequired("north")),
                         South = ParseFaceFromJson(jFaces.GetRequired("south")),
                         East = ParseFaceFromJson(jFaces.GetRequired("east")),
@@ -103,6 +105,14 @@ namespace DenizenModelsConverter
                     result.Textures.Add(texture);
                 }
             }
+            if (outliners is not null)
+            {
+                Debug("contains outliners");
+                foreach (JObject jOutliner in outliners)
+                {
+                    ReadOutliner(result, jOutliner);
+                }
+            }
             if (animations is not null)
             {
                 Debug("Contains animations");
@@ -133,7 +143,7 @@ namespace DenizenModelsConverter
                             BBModel.Animation.Keyframe keyframe = new()
                             {
                                 Channel = jFrame.GetRequiredEnum<BBModel.Animation.Keyframe.ChannelType>("channel"),
-                                DataPoint = ParseDVecFromJson(jFrame.GetRequired("data_points").First),
+                                DataPoint = ParseDVecFromObj(jFrame.GetRequired("data_points").First),
                                 UUID = Guid.Parse((string)jFrame.GetRequired("uuid")),
                                 Time = (double)jFrame.GetRequired("time"),
                                 Color = (int)jFrame.GetRequired("color"),
@@ -150,16 +160,43 @@ namespace DenizenModelsConverter
             return result;
         }
 
-        public static DoubleVector ParseDVecFromJson(JToken jVal)
+        public static BBModel.Outliner ReadOutliner(BBModel model, JObject jOutliner)
+        {
+            BBModel.Outliner outline = new()
+            {
+                Name = (string)jOutliner.GetRequired("name"),
+                Origin = ParseDVecFromArr(jOutliner.GetRequired("origin")),
+                UUID = Guid.Parse((string)jOutliner.GetRequired("uuid")),
+                // Ignore ik_enabled, ik_chain_length, export, isOpen, locked, visibility, autouv
+            };
+            foreach (JToken child in (JArray)jOutliner.GetRequired("children"))
+            {
+                if (child.Type == JTokenType.String)
+                {
+                    outline.Children.Add(Guid.Parse((string)child));
+                }
+                else
+                {
+                    BBModel.Outliner subLine = ReadOutliner(model, (JObject) child);
+                    outline.Paired.Add(subLine.UUID);
+                    outline.Paired.AddRange(subLine.Paired);
+                }
+            }
+            Debug($"Read outliner {outline.Name}");
+            model.Outlines.Add(outline);
+            return outline;
+        }
+
+        public static DoubleVector ParseDVecFromObj(JToken jVal)
         {
             JObject jObj = (JObject)jVal;
             return new DoubleVector((double)jObj.GetRequired("x"), (double)jObj.GetRequired("y"), (double)jObj.GetRequired("z"));
         }
 
-        public static IntegerVector ParseIVecFromJson(JToken jVal)
+        public static DoubleVector ParseDVecFromArr(JToken jVal)
         {
             JArray jArr = (JArray)jVal;
-            return new IntegerVector((int)jArr[0], (int)jArr[1], (int)jArr[2]);
+            return new DoubleVector((int)jArr[0], (int)jArr[1], (int)jArr[2]);
         }
 
         public static BBModel.Element.Face ParseFaceFromJson(JToken jVal)

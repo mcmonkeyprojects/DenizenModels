@@ -26,11 +26,13 @@ namespace DenizenModelsConverter
 
         public List<Animation> Animations = new();
 
+        public List<Outliner> Outlines = new();
+
         public class Element
         {
             public string Name;
 
-            public IntegerVector From, To, Origin;
+            public DoubleVector From, To, Origin, Rotation;
 
             public string Type;
 
@@ -64,6 +66,19 @@ namespace DenizenModelsConverter
             public Guid UUID;
 
             public byte[] RawImageBytes;
+        }
+
+        public class Outliner
+        {
+            public string Name;
+
+            public DoubleVector Origin;
+
+            public Guid UUID;
+
+            public List<Guid> Children = new();
+
+            public List<Guid> Paired = new();
         }
 
         public class Animation
