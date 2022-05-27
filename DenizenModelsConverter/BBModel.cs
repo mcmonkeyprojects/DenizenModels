@@ -28,6 +28,13 @@ namespace DenizenModelsConverter
 
         public List<Outliner> Outlines = new();
 
+        public HashSet<Guid> DiscardedIDs = new();
+
+        public Element GetElement(Guid id)
+        {
+            return Elements.FirstOrDefault(e => e.UUID == id);
+        }
+
         public class Element
         {
             public string Name;
@@ -66,6 +73,10 @@ namespace DenizenModelsConverter
             public Guid UUID;
 
             public byte[] RawImageBytes;
+
+            public string CorrectedFullPath;
+
+            public int Width, Height;
         }
 
         public class Outliner
@@ -73,6 +84,8 @@ namespace DenizenModelsConverter
             public string Name;
 
             public DoubleVector Origin;
+
+            public DoubleVector Rotation;
 
             public Guid UUID;
 

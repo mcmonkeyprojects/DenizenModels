@@ -23,5 +23,20 @@ namespace DenizenModelsConverter
             Y = y;
             Z = z;
         }
+
+        public static DoubleVector operator -(in DoubleVector v1, in DoubleVector v2)
+        {
+            return new DoubleVector(v1.X - v2.X, v1.Y - v2.Y, v1.Z - v2.Z);
+        }
+
+        public static DoubleVector operator +(in DoubleVector v1, in DoubleVector v2)
+        {
+            return new DoubleVector(v1.X + v2.X, v1.Y + v2.Y, v1.Z + v2.Z);
+        }
+
+        public string ToDenizenString()
+        {
+            return $"{X},{Y},{Z}";
+        }
     }
 }

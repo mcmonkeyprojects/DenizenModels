@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Drawing;
+using System.Drawing.Imaging;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json;
@@ -12,14 +15,9 @@ namespace DenizenModelsConverter
 {
     public static class BBModelReader
     {
-        public static bool Verbose = false;
-
         public static void Debug(string text)
         {
-            if (Verbose)
-            {
-                Console.WriteLine($"[Debug] {text}");
-            }
+            Program.Debug(text);
         }
 
         public static BBModel Interpret(string fileContent)
@@ -40,6 +38,7 @@ namespace DenizenModelsConverter
             JArray textures = (JArray)data["textures"];
             JArray outliners = (JArray)data["outliner"];
             JArray animations = (JArray)data["animations"];
+            Dictionary<string, int> elementNames = new(), outlineNames = new();
             if (elements is not null)
             {
                 Debug("Contains elements");
@@ -48,10 +47,18 @@ namespace DenizenModelsConverter
                     JObject jFaces = (JObject)jElement["faces"];
                     string name = (string)jElement.GetRequired("name");
                     string type = jElement.GetString("type", "cube");
+                    Guid id = Guid.Parse((string)jElement.GetRequired("uuid"));
                     if (type != "cube")
                     {
-                        Debug($"Skip element of type '{type}' with name '{name}'");
+                        Debug($"Skip element of type '{type}' with name '{name}' and id {id}");
+                        result.DiscardedIDs.Add(id);
                         continue;
+                    }
+                    int nameUsed = elementNames.GetValueOrDefault(name, 0);
+                    elementNames[name] = nameUsed + 1;
+                    if (nameUsed > 0)
+                    {
+                        name += (nameUsed + 1);
                     }
                     BBModel.Element element = new()
                     {
@@ -71,9 +78,9 @@ namespace DenizenModelsConverter
                         Up = ParseFaceFromJson(jFaces.GetRequired("up")),
                         Down = ParseFaceFromJson(jFaces.GetRequired("down")),
                         Type = type,
-                        UUID = Guid.Parse((string)jElement.GetRequired("uuid"))
+                        UUID = id
                     };
-                    Debug($"Read element {element.Name}");
+                    Debug($"Read element {element.Name} as id {element.UUID}");
                     result.Elements.Add(element);
                 }
             }
@@ -101,6 +108,13 @@ namespace DenizenModelsConverter
                         throw new Exception($"Cannot read model - texture {texture.Name} contains source data that isn't the expected base64 png.");
                     }
                     texture.RawImageBytes = Convert.FromBase64String(sourceTex.After("data:image/png;base64,"));
+#pragma warning disable CA1416 // Validate platform compatibility
+                    using (Image image = Image.FromStream(new MemoryStream(texture.RawImageBytes)))
+                    {
+                        texture.Width = image.Width;
+                        texture.Height = image.Height;
+                    }
+#pragma warning restore CA1416 // Validate platform compatibility
                     Debug($"Read texture {texture.Name}");
                     result.Textures.Add(texture);
                 }
@@ -110,7 +124,7 @@ namespace DenizenModelsConverter
                 Debug("contains outliners");
                 foreach (JObject jOutliner in outliners)
                 {
-                    ReadOutliner(result, jOutliner);
+                    ReadOutliner(result, jOutliner, outlineNames);
                 }
             }
             if (animations is not null)
@@ -160,11 +174,20 @@ namespace DenizenModelsConverter
             return result;
         }
 
-        public static BBModel.Outliner ReadOutliner(BBModel model, JObject jOutliner)
+        public static HashSet<double> AcceptableRotations = new() { 0, 22.5, 45, -22.5, -45 };
+
+        public static BBModel.Outliner ReadOutliner(BBModel model, JObject jOutliner, Dictionary<string, int> names)
         {
+            string name = (string)jOutliner.GetRequired("name");
+            int nameUsed = names.GetValueOrDefault(name, 0);
+            names[name] = nameUsed + 1;
+            if (nameUsed > 0)
+            {
+                name += (nameUsed + 1);
+            }
             BBModel.Outliner outline = new()
             {
-                Name = (string)jOutliner.GetRequired("name"),
+                Name = name,
                 Origin = ParseDVecFromArr(jOutliner.GetRequired("origin")),
                 UUID = Guid.Parse((string)jOutliner.GetRequired("uuid")),
                 // Ignore ik_enabled, ik_chain_length, export, isOpen, locked, visibility, autouv
@@ -173,11 +196,42 @@ namespace DenizenModelsConverter
             {
                 if (child.Type == JTokenType.String)
                 {
-                    outline.Children.Add(Guid.Parse((string)child));
+                    Guid id = Guid.Parse((string)child);
+                    BBModel.Element element = model.GetElement(id);
+                    if (element is null)
+                    {
+                        if (model.DiscardedIDs.Contains(id))
+                        {
+                            continue;
+                        }
+                        throw new Exception($"Cannot find required element {id} for outline {outline.Name}");
+                    }
+                    if (AcceptableRotations.Contains(element.Rotation.X) && AcceptableRotations.Contains(element.Rotation.Y) && AcceptableRotations.Contains(element.Rotation.Z))
+                    {
+                        outline.Children.Add(id);
+                    }
+                    else
+                    {
+                        BBModel.Outliner specialSideOutline = new()
+                        {
+                            Name = $"{outline.Name}_auto_{element.Name}",
+                            Origin = outline.Origin + element.Origin,
+                            Rotation = element.Rotation,
+                            UUID = Guid.NewGuid(),
+                        };
+                        // TODO: Is this shift needed?
+                        //element.From -= element.Origin;
+                        //element.To -= element.Origin;
+                        element.Rotation = new DoubleVector();
+                        element.Origin = new DoubleVector();
+                        specialSideOutline.Children.Add(element.UUID);
+                        model.Outlines.Add(specialSideOutline);
+                        outline.Paired.Add(specialSideOutline.UUID);
+                    }
                 }
                 else
                 {
-                    BBModel.Outliner subLine = ReadOutliner(model, (JObject) child);
+                    BBModel.Outliner subLine = ReadOutliner(model, (JObject) child, names);
                     outline.Paired.Add(subLine.UUID);
                     outline.Paired.AddRange(subLine.Paired);
                 }
@@ -208,7 +262,7 @@ namespace DenizenModelsConverter
                 TextureID = (int)jObj.GetRequired("texture"),
                 TexCoord = new BBModel.Element.Face.UV()
                 {
-                    ULow = (int)uv[0], // TODO: Validate this ordering
+                    ULow = (int)uv[0],
                     VLow = (int)uv[1],
                     UHigh = (int)uv[2],
                     VHigh = (int)uv[3]
