@@ -55,7 +55,7 @@ dmodels_spawn_model:
         # Supposedly it's 25.6 according to external docs (16 * 1.6), but that also is wrong in my testing.
         - define offset <location[<[part.origin]>].div[25.6]>
         - define rots <[part.rotation].split[,].parse[to_radians]>
-        - define pose <[rots].get[1].mul[-1]>,<[rots].get[2]>,<[rots].get[3]>
+        - define pose <[rots].get[1].mul[-1]>,<[rots].get[2].mul[-1]>,<[rots].get[3]>
         - spawn dmodel_part_stand[equipment=[helmet=<[part.item]>];armor_pose=[head=<[pose]>]] <[location].add[<[offset]>]> save:spawned
         - flag <entry[spawned].spawned_entity> dmodel_def_pose:<[pose]>
         - flag <entry[spawned].spawned_entity> dmodel_def_offset:<[offset]>
@@ -147,25 +147,26 @@ dmodels_move_to_frame:
                         - define data <[before_frame.data]>
             - define framedata.<[channel]> <[data]>
         - define this_part <[model_data.<[part_id]>]>
+        - define this_rots <[this_part.rotation].split[,].parse[to_radians]>
+        - define pose <[this_rots].get[1].mul[-1]>,<[this_rots].get[2].mul[-1]>,<[this_rots].get[3]>
         - define parent_id <[this_part.parent]>
         - define parent_pos <location[<[parentage.<[parent_id]>.position]||0,0,0>]>
         - define parent_rot <location[<[parentage.<[parent_id]>.rotation]||0,0,0>]>
         - define parent_offset <location[<[parentage.<[parent_id]>.offset]||0,0,0>]>
-        - define rel_offset <location[<[this_part.origin]>].sub[<[parent_offset]>]>
+        - define parent_raw_offset <[model_data.<[parent_id]>.origin]||0,0,0>
+        - define rel_offset <location[<[this_part.origin]>].sub[<[parent_raw_offset]>]>
         - define rot_offset <[rel_offset].proc[dmodels_rot_proc].context[<[parent_rot]>]>
-        - define pos_shift <[rot_offset].sub[<[rel_offset]>]>
-        - define new_pos <[framedata.position].as_location.proc[dmodels_rot_proc].context[<[parent_rot]>].add[<[pos_shift]>].add[<[parent_pos]>]>
+        - define new_pos <[framedata.position].as_location.proc[dmodels_rot_proc].context[<[parent_rot]>].add[<[rot_offset]>].add[<[parent_pos]>]>
         - define new_rot <[framedata.rotation].as_location.add[<[parent_rot]>]>
         - define parentage.<[part_id]>.position:<[new_pos]>
         - define parentage.<[part_id]>.rotation:<[new_rot]>
         - define parentage.<[part_id]>.offset:<[rot_offset].add[<[parent_offset]>]>
-        - if <[part_id].starts_with[823a7148]>:
-            - debug log "[DB] rel <[rel_offset].round_to[2]> rot <[rot_offset].round_to[2]> par <[parent_offset].round_to[2]> fram <[framedata.position].as_location.round_to[2]> shift <[pos_shift].round_to[2]>"
         - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
-            - teleport <[ent]> <[root_entity].location.add[<[ent].flag[dmodel_def_offset].add[<[new_pos].div[25.6]>]>]>
-            - define radian_rot <[new_rot].xyz.split[,]>
-            - define pose <[radian_rot].get[1].mul[-1]>,<[radian_rot].get[2]>,<[radian_rot].get[3]>
-            - adjust <[ent]> armor_pose:[head=<[ent].flag[dmodel_def_pose].as_location.add[<[pose]>].xyz>]
+            #- teleport <[ent]> <[root_entity].location.add[<[ent].flag[dmodel_def_offset].add[<[new_pos].div[25.6]>]>]>
+            - teleport <[ent]> <[root_entity].location.add[<[new_pos].div[25.6]>]>
+            - define radian_rot <[new_rot].add[<[pose]>].xyz.split[,]>
+            - define pose <[radian_rot].get[1]>,<[radian_rot].get[2]>,<[radian_rot].get[3]>
+            - adjust <[ent]> armor_pose:[head=<[pose]>]
 
 dmodels_rot_proc:
     type: procedure
