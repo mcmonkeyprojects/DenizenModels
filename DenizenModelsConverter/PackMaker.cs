@@ -80,34 +80,27 @@ namespace DenizenModelsConverter
             foreach (BBModel.Outliner outline in model.Outlines)
             {
                 string modelText = MinecraftModelMaker.CreateModelFor(model, outline);
-                if (modelText is null)
-                {
-                    Debug("Skip this model outline entry - no content");
-                    JObject skippedEntry = new();
-                    skippedEntry.Add("name", outline.Name);
-                    skippedEntry.Add("empty", true);
-                    skippedEntry.Add("parent", outline.Parent == null ? "none" : outline.Parent.ToString());
-                    modelSet.Add(outline.UUID.ToString(), skippedEntry);
-                    continue;
-                }
-                string modelName = $"{modelPath}/{outline.Name}";
-                bool reused = existingCmd.TryGetValue(modelName, out int id);
-                if (!reused)
-                {
-                    Debug($"Adding new custom_model_data for {modelName} as {min}");
-                    id = min++;
-                    JObject overrideEntry = new();
-                    overrideEntry.Add("model", $"{modelPath}/{outline.Name}");
-                    JObject predicate = new();
-                    predicate.Add("custom_model_data", id);
-                    overrideEntry.Add("predicate", predicate);
-                    overrides.Add(overrideEntry);
-                }
-                Debug($"Creating model for {modelName} as {item}[custom_model_data={id}]");
-                File.WriteAllText($"{fullModelPath}/{outline.Name}.json", modelText);
                 JObject modelEntry = new();
+                if (modelText is not null)
+                {
+                    string modelName = $"{modelPath}/{outline.Name}";
+                    bool reused = existingCmd.TryGetValue(modelName, out int id);
+                    if (!reused)
+                    {
+                        Debug($"Adding new custom_model_data for {modelName} as {min}");
+                        id = min++;
+                        JObject overrideEntry = new();
+                        overrideEntry.Add("model", $"{modelPath}/{outline.Name}");
+                        JObject predicate = new();
+                        predicate.Add("custom_model_data", id);
+                        overrideEntry.Add("predicate", predicate);
+                        overrides.Add(overrideEntry);
+                    }
+                    Debug($"Creating model for {modelName} as {item}[custom_model_data={id}]");
+                    File.WriteAllText($"{fullModelPath}/{outline.Name}.json", modelText);
+                    modelEntry.Add("item", $"{item}[custom_model_data={id}]");
+                }
                 modelEntry.Add("name", outline.Name);
-                modelEntry.Add("item", $"{item}[custom_model_data={id}]");
                 modelEntry.Add("origin", outline.Origin.ToDenizenString());
                 modelEntry.Add("rotation", outline.Rotation.ToDenizenString());
                 modelEntry.Add("parent", outline.Parent == null ? "none" : outline.Parent.ToString());

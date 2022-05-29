@@ -16,7 +16,7 @@ dmodels_load_model:
     - define yamlid dmodels_<[model_name]>
     - define filename data/models/<[model_name]>.dmodel.yml
     - if !<server.has_file[<[filename]>]>:
-        - debug error "Invalid model <[model_name]>, file does not exist: <[filename]>, cannot load"
+        - debug error "[DModels] Invalid model <[model_name]>, file does not exist: <[filename]>, cannot load"
         - stop
     - ~yaml id:<[yamlid]> load:<[filename]>
     - define order <yaml[<[yamlid]>].read[order]>
@@ -28,7 +28,7 @@ dmodels_load_model:
     - foreach <[animations]> key:name as:anim:
         - foreach <[order]> as:id:
             - if <[anim.animators].contains[<[id]>]>:
-                - define raw_animators.<[id]> <[anim.animators.<[id]>]>
+                - define raw_animators.<[id]>.frames <[anim.animators.<[id]>.frames].sort_by_value[get[time]]>
             - else:
                 - define raw_animators.<[id]> <map[frames=<list>]>
         - define anim.animators <[raw_animators]>
@@ -48,7 +48,7 @@ dmodels_spawn_model:
     - spawn dmodel_part_stand <[location]> save:root
     - flag <entry[root].spawned_entity> dmodel_model_id:<[model_name]>
     - foreach <server.flag[dmodels_data.model_<[model_name]>]> key:id as:part:
-        - if <[part.empty]||false>:
+        - if !<[part.item].exists>:
             - foreach next
         - define rots <[part.rotation].split[,].parse[to_radians]>
         # Idk wtf is with the scale here. It's somewhere in the range of 25 to 26. 25.45 seems closest in one of my tests,
@@ -110,6 +110,8 @@ dmodels_move_to_frame:
                 - flag server dmodels_anim_active.<[root_entity].uuid>:!
     - define parentage <map>
     - foreach <[animation_data.animators]> key:part_id as:animator:
+        - define framedata.position 0,0,0
+        - define framedata.rotation 0,0,0
         - foreach position|rotation as:channel:
             - define relevant_frames <[animator.frames].filter[get[channel].equals[<[channel]>]]>
             - define before_frame <[relevant_frames].filter[get[time].is_less_than_or_equal_to[<[timespot]>]].last||null>
@@ -130,10 +132,10 @@ dmodels_move_to_frame:
                     - case catmullrom:
                         - define before_extra <[relevant_frames].filter[get[time].is_less_than[<[before_frame.time]>]].last||null>
                         - if <[before_extra]> == null:
-                            - define before_extra <[before_frame]>
+                            - define before_extra <[animation_data.loop].equals[loop].if_true[<[relevant_frames].last>].if_false[<[before_frame]>]>
                         - define after_extra <[relevant_frames].filter[get[time].is_more_than[<[after_frame.time]>]].first||null>
                         - if <[after_extra]> == null:
-                            - define after_extra <[after_frame]>
+                            - define after_extra <[animation_data.loop].equals[loop].if_true[<[relevant_frames].first>].if_false[<[after_frame]>]>
                         - define p0 <[before_extra.data].as_location>
                         - define p1 <[before_frame.data].as_location>
                         - define p2 <[after_frame.data].as_location>
@@ -143,24 +145,25 @@ dmodels_move_to_frame:
                         - define data <[after_frame.data].as_location.sub[<[before_frame.data]>].mul[<[time_percent]>].add[<[before_frame.data]>].xyz>
                     - case step:
                         - define data <[before_frame.data]>
-            - define parent_data 0,0,0
-            - define parent_id <[model_data.<[part_id]>.parent]>
-            - while <[parent_id]> != none:
-                - define new_data <[parentage.<[parent_id]>.<[channel]>]||null>
-                - if <[new_data]> != null:
-                    - define parent_data <[new_data]>
-                    - while stop
-                - define parent_id <[model_data.<[parent_id]>.parent]>
-            - define data <[data].as_location.add[<[parent_data]>]>
-            - define parentage.<[part_id]>.<[channel]>:<[data]>
-            - debug log "<[data]> and <[parent_data]> for <[part_id]> and <[model_data.<[part_id]>.parent]||0> in <[channel]>"
-            - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
-                - choose <[channel]>:
-                    - case position:
-                        - teleport <[ent]> <[root_entity].location.add[<[ent].flag[dmodel_def_offset].add[<[data].div[25.6]>]>]>
-                    - case rotation:
-                        - define radian_rot <[data].xyz.split[,].parse[to_radians].separated_by[,]>
-                        - adjust <[ent]> armor_pose:[head=<[ent].flag[dmodel_def_pose].as_location.add[<[radian_rot]>].xyz>]
+            - define framedata.<[channel]> <[data]>
+        - define this_part <[model_data.<[part_id]>]>
+        - define parent_id <[this_part.parent]>
+        - define parent_pos <location[<[parentage.<[parent_id]>.position]||0,0,0>]>
+        - define parent_rot <location[<[parentage.<[parent_id]>.rotation]||0,0,0>]>
+        - define parent_offset <location[<[parentage.<[parent_id]>.offset]||0,0,0>]>
+        #- define parent_part <[model_data.<[parent_id]>]||<map>>
+        - define rel_offset <location[<[this_part.origin]>].sub[<[parent_offset]>]>
+        - define rot_offset <[rel_offset].rotate_around_x[<[parent_rot].x.to_radians>].rotate_around_y[<[parent_rot].y.to_radians>].rotate_around_z[<[parent_rot].z.to_radians>]>
+        - define pos_shift <[rot_offset].sub[<[rel_offset]>]>
+        - define new_pos <[framedata.position].as_location.add[<[pos_shift]>].add[<[parent_pos]>]>
+        - define new_rot <[framedata.rotation].as_location.add[<[parent_rot]>]>
+        - define parentage.<[part_id]>.position:<[new_pos]>
+        - define parentage.<[part_id]>.rotation:<[new_rot]>
+        - define parentage.<[part_id]>.offset:<[rot_offset]>
+        - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
+            - teleport <[ent]> <[root_entity].location.add[<[ent].flag[dmodel_def_offset].add[<[new_pos].div[25.6]>]>]>
+            - define radian_rot <[new_rot].xyz.split[,].parse[to_radians].separated_by[,]>
+            - adjust <[ent]> armor_pose:[head=<[ent].flag[dmodel_def_pose].as_location.add[<[radian_rot]>].xyz>]
 
 dmodels_catmullrom_get_t:
     type: procedure
