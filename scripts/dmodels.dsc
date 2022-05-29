@@ -44,7 +44,7 @@ dmodels_spawn_model:
     - if !<server.has_flag[dmodels_data.model_<[model_name]>]>:
         - debug error "[DModels] cannot spawn model <[model_name]>, model not loaded"
         - stop
-    - define location <[location].center>
+    - define location <[location].center.with_yaw[180]>
     - spawn dmodel_part_stand <[location]> save:root
     - flag <entry[root].spawned_entity> dmodel_model_id:<[model_name]>
     - foreach <server.flag[dmodels_data.model_<[model_name]>]> key:id as:part:
@@ -53,9 +53,9 @@ dmodels_spawn_model:
         # Idk wtf is with the scale here. It's somewhere in the range of 25 to 26. 25.45 seems closest in one of my tests,
         # but I think that's minecraft packet location imprecision at fault so it's possibly just 26?
         # Supposedly it's 25.6 according to external docs (16 * 1.6), but that also is wrong in my testing.
-        - define offset <location[<[part.origin]>].div[25.6].rotate_around_y[<util.pi>]>
+        - define offset <location[<[part.origin]>].div[25.6]>
         - define rots <[part.rotation].split[,].parse[to_radians]>
-        - define pose <[rots].get[1].mul[-1]>,<[rots].get[2].mul[-1]>,<[rots].get[3]>
+        - define pose <[rots].get[1].mul[-1]>,<[rots].get[2]>,<[rots].get[3]>
         - spawn dmodel_part_stand[equipment=[helmet=<[part.item]>];armor_pose=[head=<[pose]>]] <[location].add[<[offset]>]> save:spawned
         - flag <entry[spawned].spawned_entity> dmodel_def_pose:<[pose]>
         - flag <entry[spawned].spawned_entity> dmodel_def_offset:<[offset]>
@@ -151,7 +151,7 @@ dmodels_move_to_frame:
         - define parent_pos <location[<[parentage.<[parent_id]>.position]||0,0,0>]>
         - define parent_rot <location[<[parentage.<[parent_id]>.rotation]||0,0,0>]>
         - define parent_offset <location[<[parentage.<[parent_id]>.offset]||0,0,0>]>
-        - define rel_offset <location[<[this_part.origin]>].rotate_around_y[<util.pi>].sub[<[parent_offset]>]>
+        - define rel_offset <location[<[this_part.origin]>].sub[<[parent_offset]>]>
         - define rot_offset <[rel_offset].proc[dmodels_rot_proc].context[<[parent_rot]>]>
         - define pos_shift <[rot_offset].sub[<[rel_offset]>]>
         - define new_pos <[framedata.position].as_location.proc[dmodels_rot_proc].context[<[parent_rot]>].add[<[pos_shift]>].add[<[parent_pos]>]>
@@ -163,8 +163,8 @@ dmodels_move_to_frame:
             - debug log "[DB] rel <[rel_offset].round_to[2]> rot <[rot_offset].round_to[2]> par <[parent_offset].round_to[2]> fram <[framedata.position].as_location.round_to[2]> shift <[pos_shift].round_to[2]>"
         - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
             - teleport <[ent]> <[root_entity].location.add[<[ent].flag[dmodel_def_offset].add[<[new_pos].div[25.6]>]>]>
-            - define radian_rot <[new_rot].xyz.split[,].parse[to_radians]>
-            - define pose <[radian_rot].get[1].mul[-1]>,<[radian_rot].get[2].mul[-1]>,<[radian_rot].get[3]>
+            - define radian_rot <[new_rot].xyz.split[,]>
+            - define pose <[radian_rot].get[1].mul[-1]>,<[radian_rot].get[2]>,<[radian_rot].get[3]>
             - adjust <[ent]> armor_pose:[head=<[ent].flag[dmodel_def_pose].as_location.add[<[pose]>].xyz>]
 
 dmodels_rot_proc:
@@ -172,7 +172,7 @@ dmodels_rot_proc:
     debug: false
     definitions: loc|rot
     script:
-    - determine <[loc].rotate_around_x[<[rot].x.to_radians>].rotate_around_y[<[rot].y.to_radians>].rotate_around_z[<[rot].z.to_radians>]>
+    - determine <[loc].rotate_around_x[<[rot].x>].rotate_around_y[<[rot].y.mul[-1]>].rotate_around_z[<[rot].z>]>
 
 dmodels_catmullrom_get_t:
     type: procedure

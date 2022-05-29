@@ -133,8 +133,16 @@ namespace DenizenModelsConverter
                     foreach (BBModel.Animation.Keyframe frame in animator.Keyframes)
                     {
                         JObject jFrame = new();
+                        if (frame.Channel == BBModel.Animation.Keyframe.ChannelType.POSITION)
+                        {
+                            // BlockBench inverts the X of animated positions for some reason???
+                            jFrame.Add("data", $"{-frame.DataPoint.X},{frame.DataPoint.Y},{frame.DataPoint.Z}");
+                        }
+                        else
+                        {
+                            jFrame.Add("data", $"{frame.DataPoint.X * PI180},{frame.DataPoint.Y * PI180},{frame.DataPoint.Z * PI180}");
+                        }
                         jFrame.Add("channel", frame.Channel.ToString());
-                        jFrame.Add("data", frame.DataPoint.ToDenizenString());
                         jFrame.Add("time", frame.Time);
                         jFrame.Add("interpolation", frame.Interpolation.ToString());
                         keyframes.Add(jFrame);
@@ -159,6 +167,8 @@ namespace DenizenModelsConverter
             File.WriteAllText($"{rawModelPath.Replace(".bbmodel", "")}.dmodel.yml", denizenFile.ToString());
             Console.WriteLine("Exported full bbmodel.");
         }
+
+        public const double PI180 = Math.PI / 180.0;
 
         public static void BuildPartsOrder(BBModel model, Guid? id, JArray output)
         {
