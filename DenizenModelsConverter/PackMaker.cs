@@ -86,7 +86,7 @@ namespace DenizenModelsConverter
                     JObject skippedEntry = new();
                     skippedEntry.Add("name", outline.Name);
                     skippedEntry.Add("empty", true);
-                    skippedEntry.Add("pairs", new JArray(outline.Paired.Select(p => p.ToString()).ToArray()));
+                    skippedEntry.Add("parent", outline.Parent == null ? "none" : outline.Parent.ToString());
                     modelSet.Add(outline.UUID.ToString(), skippedEntry);
                     continue;
                 }
@@ -110,7 +110,7 @@ namespace DenizenModelsConverter
                 modelEntry.Add("item", $"{item}[custom_model_data={id}]");
                 modelEntry.Add("origin", outline.Origin.ToDenizenString());
                 modelEntry.Add("rotation", outline.Rotation.ToDenizenString());
-                modelEntry.Add("pairs", new JArray(outline.Paired.Select(p => p.ToString()).ToArray()));
+                modelEntry.Add("parent", outline.Parent == null ? "none" : outline.Parent.ToString());
                 modelSet.Add(outline.UUID.ToString(), modelEntry);
             }
             Debug("Models done. Outputting new item override...");
@@ -153,11 +153,42 @@ namespace DenizenModelsConverter
                 animations.Add(animation.Name, jAnimation);
             }
             Debug("Animations done. Building Denizen file...");
+            JArray partsOrder = new();
+            BuildPartsOrder(model, null, partsOrder);
+            if (partsOrder.Count != model.Outlines.Count)
+            {
+                throw new Exception($"Failed to build parts order, listed {partsOrder.Count} but expected {model.Outlines.Count} ... are bone parents wrong?");
+            }
             JObject denizenFile = new();
+            denizenFile.Add("order", partsOrder);
             denizenFile.Add("models", modelSet);
             denizenFile.Add("animations", animations);
             File.WriteAllText($"{rawModelPath.Replace(".bbmodel", "")}.dmodel.yml", denizenFile.ToString());
             Console.WriteLine("Exported full bbmodel.");
+        }
+
+        public static void BuildPartsOrder(BBModel model, Guid? id, JArray output)
+        {
+            List<BBModel.Outliner> partsToAdd = new();
+            foreach (BBModel.Outliner outline in model.Outlines)
+            {
+                if (outline.Parent == id)
+                {
+                    partsToAdd.Add(outline);
+                }
+            }
+            if (partsToAdd.IsEmpty())
+            {
+                return;
+            }
+            foreach (BBModel.Outliner part in partsToAdd)
+            {
+                output.Add(part.UUID.ToString());
+            }
+            foreach (BBModel.Outliner part in partsToAdd)
+            {
+                BuildPartsOrder(model, part.UUID, output);
+            }
         }
     }
 }

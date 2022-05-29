@@ -231,16 +231,15 @@ namespace DenizenModelsConverter
                     element.Rotation = new DoubleVector();
                     element.Origin = new DoubleVector();
                     element.Outline = specialSideOutline;
+                    specialSideOutline.Parent = outline.UUID;
                     specialSideOutline.Children.Add(element.UUID);
                     model.Outlines.Add(specialSideOutline);
-                    outline.Paired.Add(specialSideOutline.UUID);
                 }
             }
             else
             {
                 BBModel.Outliner subLine = ReadOutliner(model, (JObject)child, names);
-                outline.Paired.Add(subLine.UUID);
-                outline.Paired.AddRange(subLine.Paired);
+                subLine.Parent = outline.UUID;
             }
         }
 

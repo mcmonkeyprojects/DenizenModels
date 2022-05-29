@@ -93,7 +93,7 @@ namespace DenizenModelsConverter
 
             public List<Guid> Children = new();
 
-            public List<Guid> Paired = new();
+            public Guid? Parent;
         }
 
         public class Animation
