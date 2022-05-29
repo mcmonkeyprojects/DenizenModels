@@ -6,6 +6,7 @@ Denizen Models
 This takes the form of two components:
 
 - DenizenModelsConverter
+    - `DenizenModelsConverter.sln` and the `DenizenModelsConverter` directory
     - External program, written in C#
         - Needs to be compiled via Visual Studio 2022
         - Only tested on Windows 11 currently, but theoretically works anywhere
@@ -14,6 +15,7 @@ This takes the form of two components:
         - A `.dmodel.yml` file for the Minecraft server to read
     - Planned to eventually be replaced by entirely on-server Denizen scripts eventually
 - The Denizen script
+    - `scripts/` directory `.dsc` files
     - Runs on your minecraft server using [Denizen](https://github.com/DenizenScript/Denizen)
     - Reads the `.dmodel.yml` file
     - Can spawn the models and animate them
