@@ -86,6 +86,7 @@ namespace DenizenModelsConverter
                     JObject skippedEntry = new();
                     skippedEntry.Add("name", outline.Name);
                     skippedEntry.Add("empty", true);
+                    skippedEntry.Add("pairs", new JArray(outline.Paired.Select(p => p.ToString()).ToArray()));
                     modelSet.Add(outline.UUID.ToString(), skippedEntry);
                     continue;
                 }
@@ -116,9 +117,45 @@ namespace DenizenModelsConverter
             itemOverride.Remove("overrides");
             itemOverride.Add("overrides", overrides);
             File.WriteAllText(itemFilePath, itemOverride.ToString());
-            Debug("Overrides done. Building Denizen file...");
+            Debug("Overrides done. Building animation data...");
+            JObject animations = new();
+            foreach (BBModel.Animation animation in model.Animations)
+            {
+                Debug($"Start processing animation {animation.Name}");
+                if (animations.ContainsKey(animation.Name))
+                {
+                    throw new Exception($"Cannot output functional model - duplicate animation name '{animation.Name}'");
+                }
+                JObject jAnimation = new();
+                jAnimation.Add("loop", animation.Loop.ToString());
+                jAnimation.Add("override", animation.Override);
+                jAnimation.Add("anim_time_update", animation.AnimTimeUpdate);
+                jAnimation.Add("blend_weight", animation.BlendWeight);
+                jAnimation.Add("length", animation.Length);
+                JObject jAnimators = new();
+                foreach (BBModel.Animation.Animator animator in animation.Animators)
+                {
+                    JObject jAnimator = new();
+                    JArray keyframes = new();
+                    foreach (BBModel.Animation.Keyframe frame in animator.Keyframes)
+                    {
+                        JObject jFrame = new();
+                        jFrame.Add("channel", frame.Channel.ToString());
+                        jFrame.Add("data", frame.DataPoint.ToDenizenString());
+                        jFrame.Add("time", frame.Time);
+                        jFrame.Add("interpolation", frame.Interpolation.ToString());
+                        keyframes.Add(jFrame);
+                    }
+                    jAnimator.Add("frames", keyframes);
+                    jAnimators.Add(animator.UUID.ToString(), jAnimator);
+                }
+                jAnimation.Add("animators", jAnimators);
+                animations.Add(animation.Name, jAnimation);
+            }
+            Debug("Animations done. Building Denizen file...");
             JObject denizenFile = new();
             denizenFile.Add("models", modelSet);
+            denizenFile.Add("animations", animations);
             File.WriteAllText($"{rawModelPath.Replace(".bbmodel", "")}.dmodel.yml", denizenFile.ToString());
             Console.WriteLine("Exported full bbmodel.");
         }

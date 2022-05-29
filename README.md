@@ -13,7 +13,10 @@ This takes the form of two components:
     - takes the `.bbmodel` file and converts it into two output files
         - A resource pack for clients
         - A `.dmodel.yml` file for the Minecraft server to read
-    - Planned to eventually be replaced by entirely on-server Denizen scripts eventually
+    - Planned to eventually be replaced by entirely on-server Denizen scripts eventually, with automated pack location selection and all, instead of the manual process with external programs
+    - USAGE: Command line!
+        - `./DenizenModelsConverter.exe make_pack [bbmodel_file] [pack_path] [model_path] [texture_path]` Puts a model into a resource pack, must specify model and texture path within the pack.
+        - Example: `./DenizenModelsConverter.exe make_pack goat.bbmodel creaturepack creatures/goat creatures/goat` This example parses a 'goat' model and puts it in reasonable paths, using by default `arrow` as the item to add onto.
 - The Denizen script
     - `scripts/` directory `.dsc` files
     - Runs on your minecraft server using [Denizen](https://github.com/DenizenScript/Denizen)
