@@ -209,9 +209,15 @@ namespace DenizenModelsConverter
                     }
                     throw new Exception($"Cannot find required element {id} for outline {outline.Name}");
                 }
-                if (AcceptableRotations.Contains(element.Rotation.X) && AcceptableRotations.Contains(element.Rotation.Y) && AcceptableRotations.Contains(element.Rotation.Z))
+                if (element.Outline is not null)
+                {
+                    throw new Exception($"Cannot add required element {id} for outline {outline.Name} because it is already in other outline {element.Outline.Name}");
+                }
+                if (AcceptableRotations.Contains(element.Rotation.X) && AcceptableRotations.Contains(element.Rotation.Y) && AcceptableRotations.Contains(element.Rotation.Z)
+                    && ((element.Rotation.X == 0 ? 0 : 1) + (element.Rotation.Y == 0 ? 0 : 1) + (element.Rotation.Z == 0 ? 0 : 1)) < 2)
                 {
                     outline.Children.Add(id);
+                    element.Outline = outline;
                 }
                 else
                 {
@@ -224,6 +230,7 @@ namespace DenizenModelsConverter
                     };
                     element.Rotation = new DoubleVector();
                     element.Origin = new DoubleVector();
+                    element.Outline = specialSideOutline;
                     specialSideOutline.Children.Add(element.UUID);
                     model.Outlines.Add(specialSideOutline);
                     outline.Paired.Add(specialSideOutline.UUID);

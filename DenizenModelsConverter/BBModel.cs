@@ -51,6 +51,8 @@ namespace DenizenModelsConverter
 
             public Face North, South, East, West, Up, Down;
 
+            public Outliner Outline;
+
             public class Face
             {
                 public int TextureID;
@@ -103,7 +105,9 @@ namespace DenizenModelsConverter
 
             public enum LoopType
             {
-                LOOP, ONCE
+                LOOP,
+                ONCE,
+                HOLD
             }
 
             public LoopType Loop;
@@ -148,7 +152,8 @@ namespace DenizenModelsConverter
                 public enum InterpolationType
                 {
                     LINEAR,
-                    CATMULLROM
+                    CATMULLROM, // AKA "Smooth"
+                    STEP
                 }
 
                 public InterpolationType Interpolation;
