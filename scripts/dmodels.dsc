@@ -1,3 +1,48 @@
+# +---------------------------
+# |
+# | D e n i z en   M o d e l s
+# | AKA DModels - dynamically animated models in minecraft
+# |
+# +---------------------------
+#
+# This takes BlockBench "BBModel" files, converts them (via external program) to resource pack + Denizen-compatible file,
+# then is able to display them in minecraft and even animate them, by spawning and moving invisible armor stands with resource pack items on their heads.
+#
+# Installation:
+# 1: Add "models.dsc" to your "plugins/Denizen/scripts" and "/ex reload"
+# 2: Make sure you have DenizenModelsConverter.exe on hand, either downloaded or compiled yourself from https://github.com/mcmonkeyprojects/DenizenModels
+# 3: Note that you must know the basics of operating resource packs - the pack content will be generated for you, but you must know how to configure the "mcmeta" pack file and how to install a pack on your client
+#
+# Usage:
+# 1: Create a model using blockbench - https://www.blockbench.net/
+#    Create as a 'Generic Model'
+#    Make basically anything you want
+#    Make sure pivot points are as centered as possible to minimize glitchiness from animations
+#    (animations around a distant pivot point require the armor stand move and turn at the same time, which can lose sync with itself)
+#    Animate freely, make sure the animation names are clear
+# 2: Save the ".bbmodel" file
+# 3: Use the DenizenModelsConverter program to convert the bbmodel to a ".dmodel.yml" and a resource pack
+# 4: Save the ".dmodel.yml" file into "plugins/Denizen/data/models"
+# 5: Load the resource pack on your client (or include it in your server's automatic resource pack)
+# 6: Spawn your model and control it using the Denizen scripting API documented below
+#
+# API usage examples:
+# # First load a model
+# - ~run dmodels_load_model def.model_name:goat
+# # Then you can spawn it
+# - run dmodels_spawn_model def.model_name:goat def.location:<player.location> save:spawned
+# - define root <entry[spawned].created_queue.determination.first>
+# # To move the whole model
+# - teleport <[root]> <player.location>
+# - run dmodels_reset_model_position def.root_entity:<[root]>
+# # To start an automatic animation
+# - run dmodels_animate def.root_entity:<[root]> def.animation:idle
+# # To end an automatic animation
+# - run dmodels_end_animation def.root_entity:<[root]>
+# # To move the entity to a single frame of an animation (timespot is a decimal number of seconds from the start of the animation)
+# - run dmodels_move_to_frame def.root_entity:<[root]> def.animation:idle def.timespot:0.5
+
+
 
 dmodel_part_stand:
     type: entity
@@ -65,7 +110,7 @@ dmodels_spawn_model:
         - flag <entry[root].spawned_entity> dmodel_anim_part.<[id]>:->:<entry[spawned].spawned_entity>
     - determine <entry[root].spawned_entity>
 
-dmodels_correct_to_default_position:
+dmodels_reset_model_position:
     type: task
     debug: false
     definitions: root_entity
@@ -74,12 +119,22 @@ dmodels_correct_to_default_position:
         - adjust <[part]> armor_pose:[head=<[part].flag[dmodel_def_pose]>]
         - teleport <[part]> <[root_entity].location.add[<[part].flag[dmodel_def_offset]>]>
 
+dmodels_end_animation:
+    type: task
+    debug: false
+    definitions: root_entity
+    script:
+    - flag <[root_entity]> dmodels_animation_id:!
+    - flag <[root_entity]> dmodels_anim_time:0
+    - flag server dmodels_anim_active.<[root_entity].uuid>:!
+    - run dmodels_reset_model_position def.root_entity:<[root_entity]>
+
 dmodels_animate:
     type: task
     debug: false
     definitions: root_entity|animation
     script:
-    - run dmodels_correct_to_default_position def.root_entity:<[root_entity]>
+    - run dmodels_reset_model_position def.root_entity:<[root_entity]>
     - define animation_data <server.flag[dmodels_data.animations_<[root_entity].flag[dmodel_model_id]>.<[animation]>]||null>
     - if <[animation_data]> == null:
         - debug error "[DModels] Cannot animate entity <[root_entity].uuid> due to model <[root_entity].flag[dmodel_model_id]> not having an animation named <[animation]>"
@@ -104,7 +159,7 @@ dmodels_move_to_frame:
                 - if <[root_entity].has_flag[dmodels_default_animation]>:
                     - run dmodels_animate def.root_entity:<[root_entity]> def.animation:<[root_entity].flag[dmodels_default_animation]>
                 - else:
-                    - run dmodels_correct_to_default_position def.root_entity:<[root_entity]>
+                    - run dmodels_reset_model_position def.root_entity:<[root_entity]>
                 - stop
             - case hold:
                 - define timespot <[animation_data.length]>
