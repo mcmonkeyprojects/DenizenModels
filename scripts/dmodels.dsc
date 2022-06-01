@@ -7,6 +7,7 @@ dmodel_part_stand:
         marker: true
         gravity: false
         visible: false
+        is_small: true
 
 dmodels_load_model:
     type: task

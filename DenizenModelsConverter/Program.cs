@@ -13,6 +13,8 @@ namespace DenizenModelsConverter
     {
         public static AsciiMatcher PATH_CHARS = new(AsciiMatcher.LowercaseLetters + AsciiMatcher.Digits + "_/");
 
+        public const double SCALE = 1.5f;
+
         public static bool Verbose = false;
 
         public static void Debug(string text)

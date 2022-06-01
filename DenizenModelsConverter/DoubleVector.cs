@@ -34,6 +34,11 @@ namespace DenizenModelsConverter
             return new DoubleVector(v1.X + v2.X, v1.Y + v2.Y, v1.Z + v2.Z);
         }
 
+        public static DoubleVector operator *(in DoubleVector v1, in double mul)
+        {
+            return new DoubleVector(v1.X * mul, v1.Y * mul, v1.Z * mul);
+        }
+
         public string ToDenizenString()
         {
             return $"{X},{Y},{Z}";
