@@ -15,11 +15,12 @@
 #
 # Usage:
 # 1: Create a model using blockbench - https://www.blockbench.net/
-#    Create as a 'Generic Model'
-#    Make basically anything you want
-#    Make sure pivot points are as centered as possible to minimize glitchiness from animations
-#    (animations around a distant pivot point require the armor stand move and turn at the same time, which can lose sync with itself)
-#    Animate freely, make sure the animation names are clear
+# 1.1 Create as a 'Generic Model'
+# 1.2 Make basically anything you want
+# 1.3 Note that each block cannot have a coordinate value beyond 32 (Minecraft limitation)
+# 1.4 Make sure pivot points are as correct as possible to minimize glitchiness from animations
+#    (for example, if you have a bone pivot point in the center of a block, but the block's own pivot point is left at default 0,0,0, this can lead to the armor stand having to move and rotate at the same time, and lose sync when doing so)
+# 1.5 Animate freely, make sure the animation names are clear
 # 2: Save the ".bbmodel" file
 # 3: Use the DenizenModelsConverter program to convert the bbmodel to a ".dmodel.yml" and a resource pack
 # 4: Save the ".dmodel.yml" file into "plugins/Denizen/data/models"
@@ -41,6 +42,8 @@
 # - run dmodels_end_animation def.root_entity:<[root]>
 # # To move the entity to a single frame of an animation (timespot is a decimal number of seconds from the start of the animation)
 # - run dmodels_move_to_frame def.root_entity:<[root]> def.animation:idle def.timespot:0.5
+#
+################################################
 
 
 
@@ -90,7 +93,9 @@ dmodels_spawn_model:
     - if !<server.has_flag[dmodels_data.model_<[model_name]>]>:
         - debug error "[DModels] cannot spawn model <[model_name]>, model not loaded"
         - stop
-    - define location <[location].center.with_yaw[180]>
+    # 0.72 is arbitrary but seems to align the bottom to the ground from visual testing
+    - define center <[location].with_pitch[0].below[0.72]>
+    - define yaw_mod <[location].yaw.add[180].to_radians>
     - spawn dmodel_part_stand <[location]> save:root
     - flag <entry[root].spawned_entity> dmodel_model_id:<[model_name]>
     - foreach <server.flag[dmodels_data.model_<[model_name]>]> key:id as:part:
@@ -99,10 +104,11 @@ dmodels_spawn_model:
         # Idk wtf is with the scale here. It's somewhere in the range of 25 to 26. 25.45 seems closest in one of my tests,
         # but I think that's minecraft packet location imprecision at fault so it's possibly just 26?
         # Supposedly it's 25.6 according to external docs (16 * 1.6), but that also is wrong in my testing.
-        - define offset <location[<[part.origin]>].div[25.6]>
+        # 24.5 is closest in my testing thus far.
+        - define offset <location[<[part.origin]>].div[24.5]>
         - define rots <[part.rotation].split[,].parse[to_radians]>
         - define pose <[rots].get[1].mul[-1]>,<[rots].get[2].mul[-1]>,<[rots].get[3]>
-        - spawn dmodel_part_stand[equipment=[helmet=<[part.item]>];armor_pose=[head=<[pose]>]] <[location].add[<[offset]>]> save:spawned
+        - spawn dmodel_part_stand[equipment=[helmet=<[part.item]>];armor_pose=[head=<[pose]>]] <[center].add[<[offset].rotate_around_y[<[yaw_mod].mul[-1]>]>]> save:spawned
         - flag <entry[spawned].spawned_entity> dmodel_def_pose:<[pose]>
         - flag <entry[spawned].spawned_entity> dmodel_def_offset:<[offset]>
         - flag <entry[spawned].spawned_entity> dmodel_root:<entry[root].spawned_entity>
@@ -115,9 +121,11 @@ dmodels_reset_model_position:
     debug: false
     definitions: root_entity
     script:
+    - define center <[root_entity].location.with_pitch[0].below[0.72]>
+    - define yaw_mod <[root_entity].location.yaw.add[180].to_radians>
     - foreach <[root_entity].flag[dmodel_parts]> as:part:
         - adjust <[part]> armor_pose:[head=<[part].flag[dmodel_def_pose]>]
-        - teleport <[part]> <[root_entity].location.add[<[part].flag[dmodel_def_offset]>]>
+        - teleport <[part]> <[center].add[<[part].flag[dmodel_def_offset].rotate_around_y[<[yaw_mod].mul[-1]>]>]>
 
 dmodels_end_animation:
     type: task
@@ -164,6 +172,8 @@ dmodels_move_to_frame:
             - case hold:
                 - define timespot <[animation_data.length]>
                 - flag server dmodels_anim_active.<[root_entity].uuid>:!
+    - define center <[root_entity].location.with_pitch[0].below[0.72]>
+    - define yaw_mod <[root_entity].location.yaw.add[180].to_radians>
     - define parentage <map>
     - foreach <[animation_data.animators]> key:part_id as:animator:
         - define framedata.position 0,0,0
@@ -218,7 +228,8 @@ dmodels_move_to_frame:
         - define parentage.<[part_id]>.rotation:<[new_rot]>
         - define parentage.<[part_id]>.offset:<[rot_offset].add[<[parent_offset]>]>
         - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
-            - teleport <[ent]> <[root_entity].location.add[<[new_pos].div[25.6]>]>
+            # Note: 24.5 is the offset multiplifer explained in the comments of dmodels_spawn_model
+            - teleport <[ent]> <[center].add[<[new_pos].div[24.5].rotate_around_y[<[yaw_mod].mul[-1]>]>]>
             - define radian_rot <[new_rot].add[<[pose]>].xyz.split[,]>
             - define pose <[radian_rot].get[1]>,<[radian_rot].get[2]>,<[radian_rot].get[3]>
             - adjust <[ent]> armor_pose:[head=<[pose]>]

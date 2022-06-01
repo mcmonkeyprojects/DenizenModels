@@ -82,7 +82,7 @@ namespace DenizenModelsConverter
             group.Add("color", 0);
             group.Add("children", childrenList);
             groups.Add(group);
-            head.Add("translation", new JArray(8 * Program.SCALE, 2 * Program.SCALE, 8 * Program.SCALE));
+            head.Add("translation", new JArray(8 * Program.SCALE, 3.75 * Program.SCALE, 8 * Program.SCALE));
             head.Add("scale", new JArray(Program.SCALE, Program.SCALE, Program.SCALE));
             display.Add("head", head);
             jout.Add("textures", textures);
