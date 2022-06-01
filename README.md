@@ -23,9 +23,13 @@ This takes the form of two components:
     - Reads the `.dmodel.yml` file
     - Can spawn the models and animate them
 
+### Script Usage
+
+Documented in the header of the `dmodels.dsc` script.
+
 ### Status
 
-Early testing. Not read for use.
+Initial beta release. Functions for testing purposes, but not the most user friendly. A lot more is planned for this.
 
 ### Licensing pre-note:
 
