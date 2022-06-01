@@ -61,7 +61,7 @@ namespace DenizenModelsConverter
 
                 public class UV
                 {
-                    public int ULow, UHigh, VLow, VHigh;
+                    public float ULow, UHigh, VLow, VHigh;
                 }
             }
         }

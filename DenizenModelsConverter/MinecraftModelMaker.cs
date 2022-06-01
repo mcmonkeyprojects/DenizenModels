@@ -19,7 +19,14 @@ namespace DenizenModelsConverter
             JArray childrenList = new();
             foreach (BBModel.Texture texture in model.Textures)
             {
-                textures.Add(texture.ID, texture.CorrectedFullPath);
+                if (texture.ID == "1" && model.Textures.Count == 1)
+                { // Some models have only one texture, labeled '1', which should be #0
+                    textures.Add("0", texture.CorrectedFullPath);
+                }
+                else
+                {
+                    textures.Add(texture.ID, texture.CorrectedFullPath);
+                }
                 if (texture.Particle)
                 {
                     textures.Add("particle", texture.CorrectedFullPath);

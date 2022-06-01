@@ -71,12 +71,12 @@ namespace DenizenModelsConverter
                         Color = (int)jElement.GetRequired("color"),
                         Rotation = jElement.ContainsKey("rotation") ? ParseDVecFromArr(jElement.GetRequired("rotation")) : new DoubleVector(),
                         Origin = ParseDVecFromArr(jElement.GetRequired("origin")),
-                        North = ParseFaceFromJson(jFaces.GetRequired("north")),
-                        South = ParseFaceFromJson(jFaces.GetRequired("south")),
-                        East = ParseFaceFromJson(jFaces.GetRequired("east")),
-                        West = ParseFaceFromJson(jFaces.GetRequired("west")),
-                        Up = ParseFaceFromJson(jFaces.GetRequired("up")),
-                        Down = ParseFaceFromJson(jFaces.GetRequired("down")),
+                        North = ParseFaceFromJson(jFaces, "north"),
+                        South = ParseFaceFromJson(jFaces, "south"),
+                        East = ParseFaceFromJson(jFaces, "east"),
+                        West = ParseFaceFromJson(jFaces, "west"),
+                        Up = ParseFaceFromJson(jFaces, "up"),
+                        Down = ParseFaceFromJson(jFaces, "down"),
                         Type = type,
                         UUID = id
                     };
@@ -102,6 +102,10 @@ namespace DenizenModelsConverter
                         // Ignore 'saved'
                         UUID = Guid.Parse((string)jTexture.GetRequired("uuid"))
                     };
+                    if (texture.Name.EndsWith(".png"))
+                    {
+                        texture.Name = texture.Name.BeforeLast(".png");
+                    }
                     string sourceTex = (string)jTexture.GetRequired("source");
                     if (!sourceTex.StartsWith("data:image/png;base64,"))
                     {
@@ -280,19 +284,28 @@ namespace DenizenModelsConverter
             return new DoubleVector((double)jArr[0], (double)jArr[1], (double)jArr[2]);
         }
 
-        public static BBModel.Element.Face ParseFaceFromJson(JToken jVal)
+        public static BBModel.Element.Face ParseFaceFromJson(JObject faces, string name)
         {
-            JObject jObj = (JObject)jVal;
+            JObject jObj = (JObject)faces.GetRequired(name);
             JArray uv = (JArray)jObj.GetRequired("uv");
+            if (uv.Count < 4)
+            {
+                throw new Exception($"Cannot parse model for face {name}, UV count is {uv.Count}");
+            }
+            JToken tok = jObj.GetRequired("texture");
+            if (tok.Type == JTokenType.Null) // 0 can be misread as null sometimes apparently
+            {
+                tok = 0;
+            }
             return new()
             {
-                TextureID = (int)jObj.GetRequired("texture"),
+                TextureID = (int)tok,
                 TexCoord = new BBModel.Element.Face.UV()
                 {
-                    ULow = (int)uv[0],
-                    VLow = (int)uv[1],
-                    UHigh = (int)uv[2],
-                    VHigh = (int)uv[3]
+                    ULow = (float)uv[0],
+                    VLow = (float)uv[1],
+                    UHigh = (float)uv[2],
+                    VHigh = (float)uv[3]
                 }
             };
         }
