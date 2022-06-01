@@ -162,7 +162,6 @@ dmodels_move_to_frame:
         - define parentage.<[part_id]>.rotation:<[new_rot]>
         - define parentage.<[part_id]>.offset:<[rot_offset].add[<[parent_offset]>]>
         - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
-            #- teleport <[ent]> <[root_entity].location.add[<[ent].flag[dmodel_def_offset].add[<[new_pos].div[25.6]>]>]>
             - teleport <[ent]> <[root_entity].location.add[<[new_pos].div[25.6]>]>
             - define radian_rot <[new_rot].add[<[pose]>].xyz.split[,]>
             - define pose <[radian_rot].get[1]>,<[radian_rot].get[2]>,<[radian_rot].get[3]>
@@ -180,19 +179,27 @@ dmodels_catmullrom_get_t:
     debug: false
     definitions: t|p0|p1
     script:
-    # This is more complex for different alpha values, but alpha=1 compresses down to a '.length' call conveniently
-    - determine <[p1].sub[<[p0]>].length.add[<[t]>]>
+    # This is more complex for different alpha values, but alpha=1 compresses down to a '.vector_length' call conveniently
+    - determine <[p1].sub[<[p0]>].vector_length.add[<[t]>]>
 
 dmodels_catmullrom_proc:
     type: procedure
     debug: false
     definitions: p0|p1|p2|p3|t
     script:
+    # Zero distances are impossible to calculate
+    - if <[p2].sub[<[p1]>].vector_length> < 0.01:
+        - determine <[p2]>
     # TODO: Validate this mess
+    # Based on https://en.wikipedia.org/wiki/Centripetal_Catmull%E2%80%93Rom_spline#Code_example_in_Unreal_C++
+    # With safety checks added for impossible situations
     - define t0 0
     - define t1 <proc[dmodels_catmullrom_get_t].context[0|<[p0]>|<[p1]>]>
     - define t2 <proc[dmodels_catmullrom_get_t].context[<[t1]>|<[p1]>|<[p2]>]>
     - define t3 <proc[dmodels_catmullrom_get_t].context[<[t2]>|<[p2]>|<[p3]>]>
+    # Divide-by-zero safety check
+    - if <[t1].abs> < 0.001 || <[t2].sub[<[t1]>].abs> < 0.001 || <[t2].abs> < 0.001 || <[t3].sub[<[t1]>].abs> < 0.001:
+        - determine <[p2].sub[<[p1]>].mul[<[t]>].add[<[p1]>]>
     - define t <[t2].sub[<[t1]>].mul[<[t]>].add[<[t1]>]>
     # ( t1-t )/( t1-t0 )*p0 + ( t-t0 )/( t1-t0 )*p1;
     - define a1 <[p0].mul[<[t1].sub[<[t]>].div[<[t1]>]>].add[<[p1].mul[<[t].div[<[t1]>]>]>]>
