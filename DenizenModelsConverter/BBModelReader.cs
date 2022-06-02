@@ -45,7 +45,7 @@ namespace DenizenModelsConverter
                 foreach (JObject jElement in elements)
                 {
                     JObject jFaces = (JObject)jElement["faces"];
-                    string name = (string)jElement.GetRequired("name");
+                    string name = ((string)jElement.GetRequired("name")).ToLowerFast();
                     string type = jElement.GetString("type", "cube");
                     Guid id = Guid.Parse((string)jElement.GetRequired("uuid"));
                     if (type != "cube")
@@ -92,9 +92,9 @@ namespace DenizenModelsConverter
                     BBModel.Texture texture = new()
                     {
                         Path = (string)jTexture.GetRequired("path"),
-                        Name = (string)jTexture.GetRequired("name"),
-                        Folder = (string)jTexture.GetRequired("folder"),
-                        Namespace = (string)jTexture.GetRequired("namespace"),
+                        Name = ((string)jTexture.GetRequired("name")).ToLowerFast(),
+                        Folder = ((string)jTexture.GetRequired("folder")).ToLowerFast(),
+                        Namespace = ((string)jTexture.GetRequired("namespace")).ToLowerFast(),
                         ID = (string)jTexture.GetRequired("id"),
                         Mode = (string)jTexture.GetRequired("mode"),
                         Particle = jTexture.GetBool("particle", false),
@@ -158,7 +158,7 @@ namespace DenizenModelsConverter
                     BBModel.Animation animation = new()
                     {
                         UUID = Guid.Parse((string)jAnimation.GetRequired("uuid")),
-                        Name = (string)jAnimation.GetRequired("name"),
+                        Name = ((string)jAnimation.GetRequired("name")).ToLowerFast(),
                         Loop = jAnimation.GetRequiredEnum<BBModel.Animation.LoopType>("loop"),
                         Override = jAnimation.GetBool("override", false),
                         AnimTimeUpdate = (string)jAnimation.GetRequired("anim_time_update"),
@@ -249,7 +249,7 @@ namespace DenizenModelsConverter
 
         public static BBModel.Outliner ReadOutliner(BBModel model, JObject jOutliner, Dictionary<string, int> names)
         {
-            string name = (string)jOutliner.GetRequired("name");
+            string name = ((string)jOutliner.GetRequired("name")).ToLowerFast();
             int nameUsed = names.GetValueOrDefault(name, 0);
             names[name] = nameUsed + 1;
             if (nameUsed > 0)
