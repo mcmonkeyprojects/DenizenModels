@@ -17,16 +17,10 @@ namespace DenizenModelsConverter
             JObject jout = new(), textures = new(), group = new(), display = new(), head = new();
             JArray groups = new(), elements = new();
             JArray childrenList = new();
+            int texId = 0;
             foreach (BBModel.Texture texture in model.Textures)
             {
-                if (texture.ID == "1" && model.Textures.Count == 1)
-                { // Some models have only one texture, labeled '1', which should be #0
-                    textures.Add("0", texture.CorrectedFullPath);
-                }
-                else
-                {
-                    textures.Add(texture.ID, texture.CorrectedFullPath);
-                }
+                textures.Add((texId++).ToString(), texture.CorrectedFullPath);
                 if (texture.Particle)
                 {
                     textures.Add("particle", texture.CorrectedFullPath);
