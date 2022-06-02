@@ -48,10 +48,10 @@
 # - run dmodels_end_animation def.root_entity:<[root]>
 # # To move the entity to a single frame of an animation (timespot is a decimal number of seconds from the start of the animation)
 # - run dmodels_move_to_frame def.root_entity:<[root]> def.animation:idle def.timespot:0.5
+# # To remove the model
+# - run dmodels_remove_model def.root_entity:<[root]>
 #
 ################################################
-
-
 
 dmodel_part_stand:
     type: entity
@@ -121,6 +121,15 @@ dmodels_spawn_model:
         - flag <entry[root].spawned_entity> dmodel_parts:->:<entry[spawned].spawned_entity>
         - flag <entry[root].spawned_entity> dmodel_anim_part.<[id]>:->:<entry[spawned].spawned_entity>
     - determine <entry[root].spawned_entity>
+
+dmodels_remove_model:
+    type: task
+    debug: false
+    definitions: root_entity
+    script:
+    - foreach <[root_entity].flag[dmodel_parts]> as:part:
+      - remove <[part]>
+    - remove <[root_entity]>
 
 dmodels_reset_model_position:
     type: task
