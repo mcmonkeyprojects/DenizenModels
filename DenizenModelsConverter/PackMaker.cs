@@ -32,7 +32,7 @@ namespace DenizenModelsConverter
             Debug("Export textures...");
             foreach (BBModel.Texture texture in model.Textures)
             {
-                texture.CorrectedFullPath = $"{texturePath}/{texture.Folder}/{texture.Name}";
+                texture.CorrectedFullPath = string.IsNullOrWhiteSpace(texture.Folder) ? $"{texturePath}/{texture.Name}" : $"{texturePath}/{texture.Folder}/{texture.Name}";
                 Debug($"Exporting texture {texture.CorrectedFullPath}...");
                 Directory.CreateDirectory($"{fullTexturePath}/{texture.Folder}/");
                 File.WriteAllBytes($"{fullTexturePath}/{texture.Folder}/{texture.Name}.png", texture.RawImageBytes);
