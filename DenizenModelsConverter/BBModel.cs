@@ -18,6 +18,8 @@ namespace DenizenModelsConverter
 
         public string FormatVersion;
 
+        public int ResolutionX, ResolutionY;
+
         public DateTimeOffset CreationTime;
 
         public List<Element> Elements = new();
@@ -77,8 +79,6 @@ namespace DenizenModelsConverter
             public byte[] RawImageBytes;
 
             public string CorrectedFullPath;
-
-            public int Width, Height;
         }
 
         public class Outliner

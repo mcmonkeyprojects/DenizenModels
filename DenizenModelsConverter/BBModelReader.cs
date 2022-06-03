@@ -25,13 +25,16 @@ namespace DenizenModelsConverter
             Debug("Start read...");
             JObject data = JObject.Parse(fileContent);
             Debug("Parsed! Start proc...");
-            JObject meta = data["meta"] as JObject;
+            JObject meta = data.GetRequired("meta") as JObject;
+            JObject resolution = data.GetRequired("resolution") as JObject;
             BBModel result = new()
             {
                 JsonRoot = data,
                 Name = (string)data.GetRequired("name"),
                 FormatVersion = (string)meta.GetRequired("format_version"),
-                CreationTime = DateTimeOffset.FromUnixTimeSeconds((long)meta.GetRequired("creation_time")).ToLocalTime()
+                CreationTime = DateTimeOffset.FromUnixTimeSeconds((long)meta.GetRequired("creation_time")).ToLocalTime(),
+                ResolutionX = (int)resolution.GetRequired("width"),
+                ResolutionY = (int)resolution.GetRequired("height")
             };
             Debug("Core read, start body...");
             JArray elements = (JArray)data["elements"];
@@ -112,13 +115,6 @@ namespace DenizenModelsConverter
                         throw new Exception($"Cannot read model - texture {texture.Name} contains source data that isn't the expected base64 png.");
                     }
                     texture.RawImageBytes = Convert.FromBase64String(sourceTex.After("data:image/png;base64,"));
-#pragma warning disable CA1416 // Validate platform compatibility
-                    using (Image image = Image.FromStream(new MemoryStream(texture.RawImageBytes)))
-                    {
-                        texture.Width = image.Width;
-                        texture.Height = image.Height;
-                    }
-#pragma warning restore CA1416 // Validate platform compatibility
                     Debug($"Read texture {texture.Name}");
                     result.Textures.Add(texture);
                 }

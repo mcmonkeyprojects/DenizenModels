@@ -88,9 +88,8 @@ namespace DenizenModelsConverter
 
         public static JObject FaceToJObj(BBModel.Element.Face face, BBModel model)
         {
-            BBModel.Texture texture = model.Textures[face.TextureID];
-            float relativeU = 16f / texture.Width;
-            float relativeV = 16f / texture.Height;
+            float relativeU = 16f / model.ResolutionX;
+            float relativeV = 16f / model.ResolutionY;
             JObject output = new();
             output.Add("uv", new JArray(face.TexCoord.ULow * relativeU, face.TexCoord.VLow * relativeV, face.TexCoord.UHigh * relativeU, face.TexCoord.VHigh * relativeV));
             output.Add("texture", $"#{face.TextureID}");
