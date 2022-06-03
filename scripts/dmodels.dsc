@@ -23,7 +23,7 @@
 # 1: Create a model using blockbench - https://www.blockbench.net/
 # 1.1 Create as a 'Generic Model'
 # 1.2 Make basically anything you want
-# 1.3 Note that each block cannot have a coordinate value beyond 32 (Minecraft limitation)
+# 1.3 Note that each block cannot have a coordinate value beyond +/-16 (Minecraft limitation)
 # 1.4 Make sure pivot points are as correct as possible to minimize glitchiness from animations
 #    (for example, if you have a bone pivot point in the center of a block, but the block's own pivot point is left at default 0,0,0, this can lead to the armor stand having to move and rotate at the same time, and lose sync when doing so)
 # 1.5 Animate freely, make sure the animation names are clear
@@ -106,19 +106,32 @@ dmodels_spawn_model:
     - define yaw_mod <[location].yaw.add[180].to_radians>
     - spawn dmodel_part_stand <[location]> save:root
     - flag <entry[root].spawned_entity> dmodel_model_id:<[model_name]>
-    - foreach <server.flag[dmodels_data.model_<[model_name]>]> key:id as:part:
+    - define parentage <map>
+    - define model_data <server.flag[dmodels_data.model_<[model_name]>]>
+    - foreach <[model_data]> key:id as:part:
+        - define rots <[part.rotation].split[,].parse[to_radians]>
+        - define pose <[rots].get[1].mul[-1]>,<[rots].get[2].mul[-1]>,<[rots].get[3]>
+        - define parent_id <[part.parent]>
+        - define parent_pos <location[<[parentage.<[parent_id]>.position]||0,0,0>]>
+        - define parent_rot <location[<[parentage.<[parent_id]>.rotation]||0,0,0>]>
+        - define parent_offset <location[<[parentage.<[parent_id]>.offset]||0,0,0>]>
+        - define parent_raw_offset <[model_data.<[parent_id]>.origin]||0,0,0>
+        - define rel_offset <location[<[part.origin]>].sub[<[parent_raw_offset]>]>
+        - define rot_offset <[rel_offset].proc[dmodels_rot_proc].context[<[parent_rot]>]>
+        - define new_pos <[rot_offset].as_location.add[<[parent_pos]>]>
+        - define new_rot <[parent_rot].add[<[pose]>]>
+        - define parentage.<[id]>.position <[new_pos]>
+        - define parentage.<[id]>.rotation <[new_rot]>
+        - define parentage.<[id]>.offset <[rot_offset].add[<[parent_offset]>]>
         - if !<[part.item].exists>:
             - foreach next
-        # Idk wtf is with the scale here. It's somewhere in the range of 25 to 26. 25.45 seems closest in one of my tests,
+        # Idk wtf is with the .div[...] scale below. It's somewhere in the range of 25 to 26. 25.45 seems closest in one of my tests,
         # but I think that's minecraft packet location imprecision at fault so it's possibly just 26?
         # Supposedly it's 25.6 according to external docs (16 * 1.6), but that also is wrong in my testing.
         # 24.5 is closest in my testing thus far.
-        - define offset <location[<[part.origin]>].div[24.5]>
-        - define rots <[part.rotation].split[,].parse[to_radians]>
-        - define pose <[rots].get[1].mul[-1]>,<[rots].get[2].mul[-1]>,<[rots].get[3]>
-        - spawn dmodel_part_stand[equipment=[helmet=<[part.item]>];armor_pose=[head=<[pose]>]] <[center].add[<[offset].rotate_around_y[<[yaw_mod].mul[-1]>]>]> save:spawned
-        - flag <entry[spawned].spawned_entity> dmodel_def_pose:<[pose]>
-        - flag <entry[spawned].spawned_entity> dmodel_def_offset:<[offset]>
+        - spawn dmodel_part_stand[equipment=[helmet=<[part.item]>];armor_pose=[head=<[new_rot].xyz>]] <[center].add[<[new_pos].div[24.5].rotate_around_y[<[yaw_mod].mul[-1]>]>]> save:spawned
+        - flag <entry[spawned].spawned_entity> dmodel_def_pose:<[new_rot].xyz>
+        - flag <entry[spawned].spawned_entity> dmodel_def_offset:<[new_pos].div[24.5]>
         - flag <entry[spawned].spawned_entity> dmodel_root:<entry[root].spawned_entity>
         - flag <entry[root].spawned_entity> dmodel_parts:->:<entry[spawned].spawned_entity>
         - flag <entry[root].spawned_entity> dmodel_anim_part.<[id]>:->:<entry[spawned].spawned_entity>
@@ -240,9 +253,9 @@ dmodels_move_to_frame:
         - define rot_offset <[rel_offset].proc[dmodels_rot_proc].context[<[parent_rot]>]>
         - define new_pos <[framedata.position].as_location.proc[dmodels_rot_proc].context[<[parent_rot]>].add[<[rot_offset]>].add[<[parent_pos]>]>
         - define new_rot <[framedata.rotation].as_location.add[<[parent_rot]>]>
-        - define parentage.<[part_id]>.position:<[new_pos]>
-        - define parentage.<[part_id]>.rotation:<[new_rot]>
-        - define parentage.<[part_id]>.offset:<[rot_offset].add[<[parent_offset]>]>
+        - define parentage.<[part_id]>.position <[new_pos]>
+        - define parentage.<[part_id]>.rotation <[new_rot]>
+        - define parentage.<[part_id]>.offset <[rot_offset].add[<[parent_offset]>]>
         - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
             # Note: 24.5 is the offset multiplifer explained in the comments of dmodels_spawn_model
             - teleport <[ent]> <[center].add[<[new_pos].div[24.5].rotate_around_y[<[yaw_mod].mul[-1]>]>]>

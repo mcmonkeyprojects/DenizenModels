@@ -263,6 +263,10 @@ namespace DenizenModelsConverter
                 UUID = Guid.Parse((string)jOutliner.GetRequired("uuid")),
                 // Ignore ik_enabled, ik_chain_length, export, isOpen, locked, visibility, autouv
             };
+            if (jOutliner.ContainsKey("rotation"))
+            {
+                outline.Rotation = ParseDVecFromArr(jOutliner.GetRequired("rotation"));
+            }
             foreach (JToken child in (JArray)jOutliner.GetRequired("children"))
             {
                 AddOutlineChild(model, outline, child, names);

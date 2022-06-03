@@ -10,6 +10,7 @@ This takes the form of two components:
     - External program, written in C#
         - Needs to be compiled via Visual Studio 2022
         - Only tested on Windows 11 currently, but theoretically works anywhere
+    - Requires .NET 6 to run
     - takes the `.bbmodel` file and converts it into two output files
         - A resource pack for clients
         - A `.dmodel.yml` file for the Minecraft server to read
