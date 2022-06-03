@@ -38,7 +38,7 @@ namespace DenizenModelsConverter
                     jElement.Add("from", DVecToArray(element.From - outline.Origin));
                     jElement.Add("to", DVecToArray(element.To - outline.Origin));
                     JObject rotation = new();
-                    rotation.Add("origin", DVecToArray(element.Origin));
+                    rotation.Add("origin", DVecToArray(element.Origin - outline.Origin));
                     if (element.Rotation.X != 0)
                     {
                         rotation.Add("angle", element.Rotation.X);
