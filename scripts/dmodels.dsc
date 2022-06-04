@@ -268,7 +268,7 @@ dmodels_rot_proc:
     debug: false
     definitions: loc|rot
     script:
-    - determine <[loc].rotate_around_x[<[rot].x>].rotate_around_y[<[rot].y.mul[-1]>].rotate_around_z[<[rot].z>]>
+    - determine <[loc].rotate_around_x[<[rot].x.mul[-1]>].rotate_around_y[<[rot].y.mul[-1]>].rotate_around_z[<[rot].z>]>
 
 dmodels_catmullrom_get_t:
     type: procedure
