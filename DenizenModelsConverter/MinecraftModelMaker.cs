@@ -35,10 +35,10 @@ namespace DenizenModelsConverter
                     any = true;
                     JObject jElement = new();
                     jElement.Add("name", element.Name);
-                    jElement.Add("from", DVecToArray(element.From - outline.Origin));
-                    jElement.Add("to", DVecToArray(element.To - outline.Origin));
+                    jElement.Add("from", DVecToArray((element.From - outline.Origin) * SCALE_FACTOR));
+                    jElement.Add("to", DVecToArray((element.To - outline.Origin) * SCALE_FACTOR));
                     JObject rotation = new();
-                    rotation.Add("origin", DVecToArray(element.Origin - outline.Origin));
+                    rotation.Add("origin", DVecToArray((element.Origin - outline.Origin) * SCALE_FACTOR));
                     if (element.Rotation.X != 0)
                     {
                         rotation.Add("angle", element.Rotation.X);
@@ -72,12 +72,12 @@ namespace DenizenModelsConverter
                 return null;
             }
             group.Add("name", outline.Name);
-            group.Add("origin", DVecToArray(outline.Origin));
+            group.Add("origin", DVecToArray(outline.Origin * SCALE_FACTOR));
             group.Add("color", 0);
             group.Add("children", childrenList);
             groups.Add(group);
-            head.Add("translation", new JArray(8 * Program.SCALE, 3.75 * Program.SCALE, 8 * Program.SCALE));
-            head.Add("scale", new JArray(Program.SCALE, Program.SCALE, Program.SCALE));
+            head.Add("translation", new JArray(32, 25, 32));
+            head.Add("scale", new JArray(4, 4, 4));
             display.Add("head", head);
             jout.Add("textures", textures);
             jout.Add("elements", elements);
@@ -85,6 +85,9 @@ namespace DenizenModelsConverter
             jout.Add("display", display);
             return jout.ToString();
         }
+
+        /// <summary>2.285 is the scale to be 'normal' size (16 BlockBench pixels = 1 minecraft block), but 4.0 is the scale objects are applied at, so this factor corrects for that.</summary>
+        public const double SCALE_FACTOR = 2.285 / 4.0;
 
         public static JObject FaceToJObj(BBModel.Element.Face face, BBModel model)
         {

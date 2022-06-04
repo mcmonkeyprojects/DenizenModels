@@ -125,13 +125,9 @@ dmodels_spawn_model:
         - define parentage.<[id]>.offset <[rot_offset].add[<[parent_offset]>]>
         - if !<[part.item].exists>:
             - foreach next
-        # Idk wtf is with the .div[...] scale below. It's somewhere in the range of 25 to 26. 25.45 seems closest in one of my tests,
-        # but I think that's minecraft packet location imprecision at fault so it's possibly just 26?
-        # Supposedly it's 25.6 according to external docs (16 * 1.6), but that also is wrong in my testing.
-        # 24.5 is closest in my testing thus far.
-        - spawn dmodel_part_stand[equipment=[helmet=<[part.item]>];armor_pose=[head=<[new_rot].xyz>]] <[center].add[<[new_pos].div[24.5].rotate_around_y[<[yaw_mod].mul[-1]>]>]> save:spawned
+        - spawn dmodel_part_stand[equipment=[helmet=<[part.item]>];armor_pose=[head=<[new_rot].xyz>]] <[center].add[<[new_pos].div[16].rotate_around_y[<[yaw_mod].mul[-1]>]>]> save:spawned
         - flag <entry[spawned].spawned_entity> dmodel_def_pose:<[new_rot].xyz>
-        - flag <entry[spawned].spawned_entity> dmodel_def_offset:<[new_pos].div[24.5]>
+        - flag <entry[spawned].spawned_entity> dmodel_def_offset:<[new_pos].div[16]>
         - flag <entry[spawned].spawned_entity> dmodel_root:<entry[root].spawned_entity>
         - flag <entry[root].spawned_entity> dmodel_parts:->:<entry[spawned].spawned_entity>
         - flag <entry[root].spawned_entity> dmodel_anim_part.<[id]>:->:<entry[spawned].spawned_entity>
@@ -257,8 +253,7 @@ dmodels_move_to_frame:
         - define parentage.<[part_id]>.rotation <[new_rot]>
         - define parentage.<[part_id]>.offset <[rot_offset].add[<[parent_offset]>]>
         - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
-            # Note: 24.5 is the offset multiplifer explained in the comments of dmodels_spawn_model
-            - teleport <[ent]> <[center].add[<[new_pos].div[24.5].rotate_around_y[<[yaw_mod].mul[-1]>]>]>
+            - teleport <[ent]> <[center].add[<[new_pos].div[16].rotate_around_y[<[yaw_mod].mul[-1]>]>]>
             - define radian_rot <[new_rot].add[<[pose]>].xyz.split[,]>
             - define pose <[radian_rot].get[1]>,<[radian_rot].get[2]>,<[radian_rot].get[3]>
             - adjust <[ent]> armor_pose:[head=<[pose]>]
