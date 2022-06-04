@@ -23,7 +23,9 @@
 # 1: Create a model using blockbench - https://www.blockbench.net/
 # 1.1 Create as a 'Generic Model'
 # 1.2 Make basically anything you want
-# 1.3 Note that each block cannot have a coordinate value beyond +/-16 (Minecraft limitation)
+# 1.3 Note that there is a scale limit, of roughly 73 blockbench units (about 4 minecraft block-widths),
+#     meaning you cannot have a section of block more than 36 blockbench units from its pivot point.
+#     If you need a larger object, add more Outliner groups with pivots moved over.
 # 1.4 Make sure pivot points are as correct as possible to minimize glitchiness from animations
 #    (for example, if you have a bone pivot point in the center of a block, but the block's own pivot point is left at default 0,0,0, this can lead to the armor stand having to move and rotate at the same time, and lose sync when doing so)
 # 1.5 Animate freely, make sure the animation names are clear
