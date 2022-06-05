@@ -181,7 +181,7 @@ dmodels_animate:
 dmodels_move_to_frame:
     type: task
     debug: false
-    definitions: root_entity|animation|timespot
+    definitions: root_entity|animation|timespot|delay_pose
     script:
     - define model_data <server.flag[dmodels_data.model_<[root_entity].flag[dmodel_model_id]>]>
     - define animation_data <server.flag[dmodels_data.animations_<[root_entity].flag[dmodel_model_id]>.<[animation]>]>
@@ -259,8 +259,12 @@ dmodels_move_to_frame:
             - adjust <[ent]> reset_client_location
             - define radian_rot <[new_rot].xyz.split[,]>
             - define pose <[radian_rot].get[1]>,<[radian_rot].get[2]>,<[radian_rot].get[3]>
-            - adjust <[ent]> armor_pose:[head=<[pose]>]
-            - adjust <[ent]> send_update_packets
+            - if <[delay_pose]>:
+                - adjust <[ent]> armor_pose:[head=<[ent].flag[dmodels_next_pose].if_null[<[ent].flag[dmodel_def_pose]>]>]
+                - flag <[ent]> dmodels_next_pose:<[pose]>
+            - else:
+                - adjust <[ent]> armor_pose:[head=<[pose]>]
+                - adjust <[ent]> send_update_packets
 
 dmodels_rot_proc:
     type: procedure
@@ -321,5 +325,5 @@ dmodels_animator:
         - foreach <server.flag[dmodels_anim_active]> key:root_id:
             - define root <entity[<[root_id]>]||null>
             - if <[root].is_spawned||false>:
-                - run dmodels_move_to_frame def.root_entity:<[root]> def.animation:<[root].flag[dmodels_animation_id]> def.timespot:<[root].flag[dmodels_anim_time].div[20]>
+                - run dmodels_move_to_frame def.root_entity:<[root]> def.animation:<[root].flag[dmodels_animation_id]> def.timespot:<[root].flag[dmodels_anim_time].div[20]> def.delay_pose:true
                 - flag <[root]> dmodels_anim_time:++
