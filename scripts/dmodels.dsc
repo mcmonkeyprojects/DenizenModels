@@ -256,6 +256,7 @@ dmodels_move_to_frame:
         - define parentage.<[part_id]>.offset <[rot_offset].add[<[parent_offset]>]>
         - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
             - teleport <[ent]> <[center].add[<[new_pos].div[16].rotate_around_y[<[yaw_mod].mul[-1]>]>]>
+            - adjust <[ent]> reset_client_location
             - define radian_rot <[new_rot].add[<[pose]>].xyz.split[,]>
             - define pose <[radian_rot].get[1]>,<[radian_rot].get[2]>,<[radian_rot].get[3]>
             - adjust <[ent]> armor_pose:[head=<[pose]>]
