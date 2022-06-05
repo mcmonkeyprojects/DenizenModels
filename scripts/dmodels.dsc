@@ -250,14 +250,14 @@ dmodels_move_to_frame:
         - define rel_offset <location[<[this_part.origin]>].sub[<[parent_raw_offset]>]>
         - define rot_offset <[rel_offset].proc[dmodels_rot_proc].context[<[parent_rot]>]>
         - define new_pos <[framedata.position].as_location.proc[dmodels_rot_proc].context[<[parent_rot]>].add[<[rot_offset]>].add[<[parent_pos]>]>
-        - define new_rot <[framedata.rotation].as_location.add[<[parent_rot]>]>
+        - define new_rot <[framedata.rotation].as_location.add[<[parent_rot]>].add[<[pose]>]>
         - define parentage.<[part_id]>.position <[new_pos]>
         - define parentage.<[part_id]>.rotation <[new_rot]>
         - define parentage.<[part_id]>.offset <[rot_offset].add[<[parent_offset]>]>
         - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
             - teleport <[ent]> <[center].add[<[new_pos].div[16].rotate_around_y[<[yaw_mod].mul[-1]>]>]>
             - adjust <[ent]> reset_client_location
-            - define radian_rot <[new_rot].add[<[pose]>].xyz.split[,]>
+            - define radian_rot <[new_rot].xyz.split[,]>
             - define pose <[radian_rot].get[1]>,<[radian_rot].get[2]>,<[radian_rot].get[3]>
             - adjust <[ent]> armor_pose:[head=<[pose]>]
 
