@@ -260,6 +260,7 @@ dmodels_move_to_frame:
             - define radian_rot <[new_rot].xyz.split[,]>
             - define pose <[radian_rot].get[1]>,<[radian_rot].get[2]>,<[radian_rot].get[3]>
             - adjust <[ent]> armor_pose:[head=<[pose]>]
+            - adjust <[ent]> send_update_packets
 
 dmodels_rot_proc:
     type: procedure
