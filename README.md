@@ -24,6 +24,12 @@ This takes the form of two components:
     - Reads the `.dmodel.yml` file
     - Can spawn the models and animate them
 
+### Related Links
+
+- BlockBench: https://www.blockbench.net/
+- General Denizen scripting homepage: https://denizenscript.com/
+- DenizenModels resource page on the Denizen forum: https://forum.denizenscript.com/resources/denizen-models.103/
+
 ### Script Usage
 
 Documented in the header of the `dmodels.dsc` script.
