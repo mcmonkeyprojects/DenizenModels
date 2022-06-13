@@ -69,6 +69,7 @@
 #             Input definitions:
 #                 model_name: The name of the model to spawn, must already be loaded via 'dmodels_load_model'.
 #                 location: The location to spawn the model at.
+#                 tracking_range: (OPTIONAL) can override the global tracking_range setting in the config below per-model if desired.
 #             Supplies determination: EntityTag of the model root entity.
 #         dmodels_delete
 #             Usage: Deletes a spawned model.
@@ -97,3 +98,10 @@
 #
 ################################################
 
+dmodels_config:
+    type: data
+    debug: false
+    # You can optionally set a tracking range for all properly-spawned model entities.
+    # If set to 0, will use the server default for armor stands.
+    # You can instead set to a value like 16 for only short range visibility, or 128 for super long range, or any other number.
+    tracking_range: 0

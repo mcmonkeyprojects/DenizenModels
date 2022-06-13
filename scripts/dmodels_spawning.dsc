@@ -57,6 +57,7 @@ dmodels_spawn_model:
     - flag <entry[root].spawned_entity> dmodel_model_id:<[model_name]>
     - define parentage <map>
     - define model_data <server.flag[dmodels_data.model_<[model_name]>]>
+    - define tracking_range <[tracking_range].if_null[<script[dmodels_config].data_key[tracking_range]>]>
     - foreach <[model_data]> key:id as:part:
         - define rots <[part.rotation].split[,].parse[to_radians]>
         - define pose <[rots].get[1].mul[-1]>,<[rots].get[2].mul[-1]>,<[rots].get[3]>
@@ -75,6 +76,8 @@ dmodels_spawn_model:
         - if !<[part.item].exists>:
             - foreach next
         - spawn dmodel_part_stand[equipment=[helmet=<[part.item]>];armor_pose=[head=<[new_rot].xyz>]] <[center].add[<[new_pos].div[16].rotate_around_y[<[yaw_mod].mul[-1]>]>]> save:spawned
+        - if <[tracking_range]> > 0:
+            - adjust <entry[spawned].spawned_entity> tracking_range:<[tracking_range]>
         - flag <entry[spawned].spawned_entity> dmodel_def_pose:<[new_rot].xyz>
         - flag <entry[spawned].spawned_entity> dmodel_def_offset:<[new_pos].div[16]>
         - flag <entry[spawned].spawned_entity> dmodel_root:<entry[root].spawned_entity>
