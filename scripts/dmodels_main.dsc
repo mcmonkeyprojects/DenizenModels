@@ -64,6 +64,7 @@
 #             Usage: Loads a model from source data by name into server memory (flags).
 #             Input definitions:
 #                 model_name: The name of the model to load, must correspond to the relevant ".dmodel.yml" file.
+#             This task should be ~waited for.
 #         dmodels_spawn_model
 #             Usage: Spawns a single instance of a model using real armor stand entities at a location.
 #             Input definitions:
@@ -105,3 +106,7 @@ dmodels_config:
     # If set to 0, will use the server default for armor stands.
     # You can instead set to a value like 16 for only short range visibility, or 128 for super long range, or any other number.
     tracking_range: 0
+    # You can choose which item is used to override for models.
+    # Using a leather based item is recommended to allow for dynamically recoloring items.
+    # Leather_Horse_Armor is ideal because other leather armors make noise when equipped.
+    item: leather_horse_armor
