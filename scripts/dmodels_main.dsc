@@ -15,9 +15,8 @@
 # then is able to display them in minecraft and even animate them, by spawning and moving invisible armor stands with resource pack items on their heads.
 #
 # Installation:
-# 1: Add "models.dsc" to your "plugins/Denizen/scripts" and "/ex reload"
-# 2: Make sure you have DenizenModelsConverter.exe on hand, either downloaded or compiled yourself from https://github.com/mcmonkeyprojects/DenizenModels
-# 3: Note that you must know the basics of operating resource packs - the pack content will be generated for you, but you must know how to configure the "mcmeta" pack file and how to install a pack on your client
+# 1: Copy the "scripts/dmodels" folder to your "plugins/Denizen/scripts" and "/ex reload"
+# 3: Note that you must know the basics of operating resource packs - the pack content will be generated for you, but you must know how to install a pack on your client and/or distribute it to players as appropriate
 # 4: Take a look at the config settings in the bottom of this file in case you want to change any of them.
 #
 # Usage:
@@ -28,19 +27,19 @@
 #     meaning you cannot have a section of block more than 36 blockbench units from its pivot point.
 #     If you need a larger object, add more Outliner groups with pivots moved over.
 # 1.4 Make sure pivot points are as correct as possible to minimize glitchiness from animations
-#    (for example, if you have a bone pivot point in the center of a block, but the block's own pivot point is left at default 0,0,0, this can lead to the armor stand having to move and rotate at the same time, and lose sync when doing so)
+#     (for example, if you have a bone pivot point in the center of a block, but the block's own pivot point is left at default 0,0,0, this can lead to the armor stand having to move and rotate at the same time, and lose sync when doing so)
 # 1.5 Animate freely, make sure the animation names are clear
-# 2: Save the ".bbmodel" file
-# 3: Use the DenizenModelsConverter program to convert the bbmodel to a ".dmodel.yml" and a resource pack
-# 4: Save the ".dmodel.yml" file into "plugins/Denizen/data/models"
-# 5: Load the resource pack on your client (or include it in your server's automatic resource pack)
-# 6: Spawn your model and control it using the Denizen scripting API documented below
+# 2: Save the ".bbmodel" file into "plugins/Denizen/data/dmodels"
+# 3: Load the model. For now, just do a command like "/ex run dmodels_load_bbmodel def:GOAT" but replace "GOAT" with the name of your model
+#    This will output a resource pack to "plugins/Denizen/data/dmodels/res_pack/"
+# 4: Load the resource pack on your client (or include it in your server's automatic resource pack)
+# 5: Spawn your model and control it using the Denizen scripting API documented below
 #
 # #########
 #
 # API usage examples:
-# # First load a model
-# - ~run dmodels_load_model def.model_name:goat
+# # First load a model (in advance, not every time - you can use '/ex' to do this once after adding or modifying the .bbmodel file)
+# - ~run dmodels_load_bbmodel def.model_name:goat
 # # Then you can spawn it
 # - run dmodels_spawn_model def.model_name:goat def.location:<player.location> save:spawned
 # - define root <entry[spawned].created_queue.determination.first>

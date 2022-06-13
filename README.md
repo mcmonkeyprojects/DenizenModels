@@ -3,26 +3,14 @@ Denizen Models
 
 **Denizen Models**, aka **dModels**, is a tool that can take [BlockBench](https://www.blockbench.net/) "generic" models and render them in minecraft, including with full animations, by spawning sets of armor stands.
 
-This takes the form of two components:
+As the name implies, this relies on [Denizen](https://github.com/DenizenScript/Denizen).
 
-- DenizenModelsConverter
-    - `DenizenModelsConverter.sln` and the `DenizenModelsConverter` directory
-    - External program, written in C#
-        - Needs to be compiled via Visual Studio 2022
-        - Only tested on Windows 11 currently, but theoretically works anywhere
-    - Requires .NET 6 to run
-    - takes the `.bbmodel` file and converts it into two output files
-        - A resource pack for clients
-        - A `.dmodel.yml` file for the Minecraft server to read
-    - Planned to eventually be replaced by entirely on-server Denizen scripts eventually, with automated pack location selection and all, instead of the manual process with external programs
-    - USAGE: Command line!
-        - `./DenizenModelsConverter.exe make_pack [bbmodel_file] [pack_path] [model_path] [texture_path]` Puts a model into a resource pack, must specify model and texture path within the pack.
-        - Example: `./DenizenModelsConverter.exe make_pack goat.bbmodel creaturepack creatures/goat creatures/goat` This example parses a 'goat' model and puts it in reasonable paths, using by default `arrow` as the item to add onto.
-- The Denizen script
-    - `scripts/` directory `.dsc` files
-    - Runs on your minecraft server using [Denizen](https://github.com/DenizenScript/Denizen)
-    - Reads the `.dmodel.yml` file
-    - Can spawn the models and animate them
+There are three scripts:
+
+- `dmodels_main.dsc` is the 'main' file - it contains a detailed informational header with usage details, and a configuration section.
+    - Look through that file to learn how to use dModels.
+- `dmodels_loader.dsc` is the script that handles loading in `.bbmodel` files to Denizen and building the resource pack.
+- `dmodels_spawning.dsc` is the API script that actually handles the spawning/moving/animating/etc of models in-game.
 
 ### Related Links
 
@@ -32,11 +20,11 @@ This takes the form of two components:
 
 ### Script Usage
 
-Documented in the header of the `dmodels.dsc` script.
+Documented in the header of the `dmodels_main.dsc` script.
 
 ### Status
 
-Initial beta release. Functions for testing purposes, but not the most user friendly. A lot more is planned for this.
+Secondary beta release. Functions for testing purposes, but not the most user friendly. A lot more is planned for this. Some things are currently being changed around from what they were in the prior beta.
 
 ### Licensing pre-note:
 
