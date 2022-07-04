@@ -85,6 +85,54 @@ dmodels_spawn_model:
         - flag <entry[root].spawned_entity> dmodel_anim_part.<[id]>:->:<entry[spawned].spawned_entity>
     - determine <entry[root].spawned_entity>
 
+dmodels_fakespawn_model:
+    type: task
+    debug: false
+    definitions: model_name|location|fake_to|tracking_range
+    script:
+    - if !<server.has_flag[dmodels_data.model_<[model_name]>]>:
+        - debug error "[DModels] cannot spawn model <[model_name]>, model not loaded"
+        - stop
+    - define fake_to <[fake_to]||null>
+    - if <[fake_to]> != null:
+        # 0.72 is arbitrary but seems to align the bottom to the ground from visual testing
+        - define center <[location].with_pitch[0].below[0.72]>
+        - define yaw_mod <[location].yaw.add[180].to_radians>
+        - spawn dmodel_part_stand <[location]> save:root
+        - flag <entry[root].spawned_entity> dmodel_model_id:<[model_name]>
+        - define parentage <map>
+        - define model_data <server.flag[dmodels_data.model_<[model_name]>]>
+        - define tracking_range <[tracking_range].if_null[<script[dmodels_config].data_key[tracking_range]>]>
+        - foreach <[model_data]> key:id as:part:
+            - define rots <[part.rotation].split[,].parse[to_radians]>
+            - define pose <[rots].get[1].mul[-1]>,<[rots].get[2].mul[-1]>,<[rots].get[3]>
+            - define parent_id <[part.parent]>
+            - define parent_pos <location[<[parentage.<[parent_id]>.position]||0,0,0>]>
+            - define parent_rot <location[<[parentage.<[parent_id]>.rotation]||0,0,0>]>
+            - define parent_offset <location[<[parentage.<[parent_id]>.offset]||0,0,0>]>
+            - define parent_raw_offset <[model_data.<[parent_id]>.origin]||0,0,0>
+            - define rel_offset <location[<[part.origin]>].sub[<[parent_raw_offset]>]>
+            - define rot_offset <[rel_offset].proc[dmodels_rot_proc].context[<[parent_rot]>]>
+            - define new_pos <[rot_offset].as_location.add[<[parent_pos]>]>
+            - define new_rot <[parent_rot].add[<[pose]>]>
+            - define parentage.<[id]>.position <[new_pos]>
+            - define parentage.<[id]>.rotation <[new_rot]>
+            - define parentage.<[id]>.offset <[rot_offset].add[<[parent_offset]>]>
+            - if !<[part.item].exists>:
+                - foreach next
+            - spawn dmodel_part_stand[armor_pose=[head=<[new_rot].xyz>]] <[center].add[<[new_pos].div[16].rotate_around_y[<[yaw_mod].mul[-1]>]>]> save:spawned
+            - if <[tracking_range]> > 0:
+                - adjust <entry[spawned].spawned_entity> tracking_range:<[tracking_range]>
+            - fakeequip <entry[spawned].spawned_entity> for:<[fake_to]> head:<item[<[part.item]>]>
+            - flag <entry[spawned].spawned_entity> dmodel_def_pose:<[new_rot].xyz>
+            - flag <entry[spawned].spawned_entity> dmodel_def_offset:<[new_pos].div[16]>
+            - flag <entry[spawned].spawned_entity> dmodel_root:<entry[root].spawned_entity>
+            - flag <entry[root].spawned_entity> dmodel_parts:->:<entry[spawned].spawned_entity>
+            - flag <entry[root].spawned_entity> dmodel_anim_part.<[id]>:->:<entry[spawned].spawned_entity>
+        - determine <entry[root].spawned_entity>
+    - else:
+      - debug error "[DModels] Must specify a player to fake spawn the model for"
+
 dmodels_delete:
     type: task
     debug: false
