@@ -11,7 +11,7 @@
 # @denizen-build REL-1772
 # @script-version 1.3
 #
-# This takes BlockBench "BBModel" files, converts them (via external program) to resource pack + Denizen-compatible file,
+# This takes BlockBench "BBModel" files, converts them to a resource pack,
 # then is able to display them in minecraft and even animate them, by spawning and moving invisible armor stands with resource pack items on their heads.
 #
 # Installation:
@@ -30,15 +30,14 @@
 #     (for example, if you have a bone pivot point in the center of a block, but the block's own pivot point is left at default 0,0,0, this can lead to the armor stand having to move and rotate at the same time, and lose sync when doing so)
 # 1.5 Animate freely, make sure the animation names are clear
 # 2: Save the ".bbmodel" file into "plugins/Denizen/data/dmodels"
-# 3: Load the model. For now, just do a command like "/ex run dmodels_load_bbmodel def:GOAT" but replace "GOAT" with the name of your model
-#    This will output a resource pack to "plugins/Denizen/data/dmodels/res_pack/"
+# 3: Load the model with /dmodels reload or /dmodels load goat
 # 4: Load the resource pack on your client (or include it in your server's automatic resource pack)
 # 5: Spawn your model and control it using the Denizen scripting API documented below
 #
 # #########
 #
 # API usage examples:
-# # First load a model (in advance, not every time - you can use '/ex' to do this once after adding or modifying the .bbmodel file)
+# # First load a model (To reload all models you can just do /dmodels reload)
 # - ~run dmodels_load_bbmodel def.model_name:goat
 # # Then you can spawn it
 # - run dmodels_spawn_model def.model_name:goat def.location:<player.location> save:spawned
@@ -59,36 +58,51 @@
 #
 # API details:
 #     Runnable Tasks:
-#         dmodels_load_model
+#-         dmodels_load_model
 #             Usage: Loads a model from source data by name into server memory (flags).
 #             Input definitions:
 #                 model_name: The name of the model to load, must correspond to the relevant ".dmodel.yml" file.
 #             This task should be ~waited for.
-#         dmodels_spawn_model
+#
+#-         dmodels_spawn_model
 #             Usage: Spawns a single instance of a model using real armor stand entities at a location.
 #             Input definitions:
 #                 model_name: The name of the model to spawn, must already be loaded via 'dmodels_load_model'.
 #                 location: The location to spawn the model at.
 #                 tracking_range: (OPTIONAL) can override the global tracking_range setting in the config below per-model if desired.
 #             Supplies determination: EntityTag of the model root entity.
-#         dmodels_delete
+#
+#-         dmodels_fake_spawn_model
+#             Usage: Spawns a fake model that only shows for the player specified particularly useful for cutscenes.
+#             Input definitions:
+#                 model_name: The name of the model to spawn, must already be loaded via 'dmodels_load_model'.
+#                 location: The location to spawn the model at.
+#                 fake_to: The player this model will be shown to
+#                 tracking_range: (OPTIONAL) can override the global tracking_range setting in the config below per-model if desired.
+#             Supplies determination: EntityTag of the model root entity.
+#
+#-         dmodels_delete
 #             Usage: Deletes a spawned model.
 #             Input definitions:
 #                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
-#         dmodels_reset_model_position
+#
+#-         dmodels_reset_model_position
 #             Usage: Resets any animation data on a model, moving the model back to its default positioning.
 #             Input definitions:
 #                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
-#         dmodels_end_animation
+#
+#-         dmodels_end_animation
 #             Usage: Stops any animation currently playing on a model, and resets its position.
 #             Input definitions:
 #                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
-#         dmodels_animate
+#
+#-         dmodels_animate
 #             Usage: Starts a model animating the given animation, until the animation ends (if it does at all) or until the animation is changed or ended.
 #             Input definitions:
 #                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
 #                 animation: The name of the animation to play (as set in BlockBench).
-#         dmodels_move_to_frame
+#
+#-         dmodels_move_to_frame
 #             Usage: Moves a model's position to a single frame of an animation. Not intended for external use except for debugging animation issues.
 #             Input definitions:
 #                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
@@ -101,6 +115,8 @@
 dmodels_config:
     type: data
     debug: false
+    # Determine if all models will load on server start
+    load_on_start: true
     # You can optionally set a tracking range for all properly-spawned model entities.
     # If set to 0, will use the server default for armor stands.
     # You can instead set to a value like 16 for only short range visibility, or 128 for super long range, or any other number.
