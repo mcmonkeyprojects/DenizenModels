@@ -14,34 +14,6 @@ dmodel_part_stand:
         visible: false
         is_small: true
 
-dmodels_load_model:
-    type: task
-    debug: false
-    definitions: model_name
-    script:
-    - define yamlid dmodels_<[model_name]>
-    - define filename data/models/<[model_name]>.dmodel.yml
-    - if !<server.has_file[<[filename]>]>:
-        - debug error "[DModels] Invalid model <[model_name]>, file does not exist: <[filename]>, cannot load"
-        - stop
-    - ~yaml id:<[yamlid]> load:<[filename]>
-    - define order <yaml[<[yamlid]>].read[order]>
-    - define parts <yaml[<[yamlid]>].read[models]>
-    - define animations <yaml[<[yamlid]>].read[animations]||<map>>
-    - yaml unload id:<[yamlid]>
-    - foreach <[order]> as:id:
-        - define raw_parts.<[id]> <[parts.<[id]>]>
-    - foreach <[animations]> key:name as:anim:
-        - foreach <[order]> as:id:
-            - if <[anim.animators].contains[<[id]>]>:
-                - define raw_animators.<[id]>.frames <[anim.animators.<[id]>.frames].sort_by_value[get[time]]>
-            - else:
-                - define raw_animators.<[id]> <map[frames=<list>]>
-        - define anim.animators <[raw_animators]>
-        - define raw_animations.<[name]> <[anim]>
-    - flag server dmodels_data.model_<[model_name]>:<[raw_parts]>
-    - flag server dmodels_data.animations_<[model_name]>:<[raw_animations]>
-
 dmodels_spawn_model:
     type: task
     debug: false
@@ -84,6 +56,54 @@ dmodels_spawn_model:
         - flag <entry[root].spawned_entity> dmodel_parts:->:<entry[spawned].spawned_entity>
         - flag <entry[root].spawned_entity> dmodel_anim_part.<[id]>:->:<entry[spawned].spawned_entity>
     - determine <entry[root].spawned_entity>
+
+dmodels_fakespawn_model:
+    type: task
+    debug: false
+    definitions: model_name|location|fake_to|tracking_range
+    script:
+    - if !<server.has_flag[dmodels_data.model_<[model_name]>]>:
+        - debug error "[DModels] cannot spawn model <[model_name]>, model not loaded"
+        - stop
+    - define fake_to <[fake_to]||null>
+    - if <[fake_to]> != null:
+        # 0.72 is arbitrary but seems to align the bottom to the ground from visual testing
+        - define center <[location].with_pitch[0].below[0.72]>
+        - define yaw_mod <[location].yaw.add[180].to_radians>
+        - spawn dmodel_part_stand <[location]> save:root
+        - flag <entry[root].spawned_entity> dmodel_model_id:<[model_name]>
+        - define parentage <map>
+        - define model_data <server.flag[dmodels_data.model_<[model_name]>]>
+        - define tracking_range <[tracking_range].if_null[<script[dmodels_config].data_key[tracking_range]>]>
+        - foreach <[model_data]> key:id as:part:
+            - define rots <[part.rotation].split[,].parse[to_radians]>
+            - define pose <[rots].get[1].mul[-1]>,<[rots].get[2].mul[-1]>,<[rots].get[3]>
+            - define parent_id <[part.parent]>
+            - define parent_pos <location[<[parentage.<[parent_id]>.position]||0,0,0>]>
+            - define parent_rot <location[<[parentage.<[parent_id]>.rotation]||0,0,0>]>
+            - define parent_offset <location[<[parentage.<[parent_id]>.offset]||0,0,0>]>
+            - define parent_raw_offset <[model_data.<[parent_id]>.origin]||0,0,0>
+            - define rel_offset <location[<[part.origin]>].sub[<[parent_raw_offset]>]>
+            - define rot_offset <[rel_offset].proc[dmodels_rot_proc].context[<[parent_rot]>]>
+            - define new_pos <[rot_offset].as_location.add[<[parent_pos]>]>
+            - define new_rot <[parent_rot].add[<[pose]>]>
+            - define parentage.<[id]>.position <[new_pos]>
+            - define parentage.<[id]>.rotation <[new_rot]>
+            - define parentage.<[id]>.offset <[rot_offset].add[<[parent_offset]>]>
+            - if !<[part.item].exists>:
+                - foreach next
+            - spawn dmodel_part_stand[armor_pose=[head=<[new_rot].xyz>]] <[center].add[<[new_pos].div[16].rotate_around_y[<[yaw_mod].mul[-1]>]>]> save:spawned
+            - if <[tracking_range]> > 0:
+                - adjust <entry[spawned].spawned_entity> tracking_range:<[tracking_range]>
+            - fakeequip <entry[spawned].spawned_entity> for:<[fake_to]> head:<item[<[part.item]>]>
+            - flag <entry[spawned].spawned_entity> dmodel_def_pose:<[new_rot].xyz>
+            - flag <entry[spawned].spawned_entity> dmodel_def_offset:<[new_pos].div[16]>
+            - flag <entry[spawned].spawned_entity> dmodel_root:<entry[root].spawned_entity>
+            - flag <entry[root].spawned_entity> dmodel_parts:->:<entry[spawned].spawned_entity>
+            - flag <entry[root].spawned_entity> dmodel_anim_part.<[id]>:->:<entry[spawned].spawned_entity>
+        - determine <entry[root].spawned_entity>
+    - else:
+      - debug error "[Denizen Models] Must specify a player to fake spawn the model for"
 
 dmodels_delete:
     type: task
@@ -133,88 +153,90 @@ dmodels_move_to_frame:
     debug: false
     definitions: root_entity|animation|timespot|delay_pose
     script:
-    - define model_data <server.flag[dmodels_data.model_<[root_entity].flag[dmodel_model_id]>]>
-    - define animation_data <server.flag[dmodels_data.animations_<[root_entity].flag[dmodel_model_id]>.<[animation]>]>
-    - if <[timespot]> > <[animation_data.length]>:
-        - choose <[animation_data.loop]>:
-            - case loop:
-                - define timespot <[timespot].mod[<[animation_data.length]>]>
-            - case once:
-                - flag server dmodels_anim_active.<[root_entity].uuid>:!
-                - if <[root_entity].has_flag[dmodels_default_animation]>:
-                    - run dmodels_animate def.root_entity:<[root_entity]> def.animation:<[root_entity].flag[dmodels_default_animation]>
+    #When reloading models console spams errors this prevents the issue
+    - if !<server.has_flag[dmodels_reloading]>:
+        - define model_data <server.flag[dmodels_data.model_<[root_entity].flag[dmodel_model_id]>]>
+        - define animation_data <server.flag[dmodels_data.animations_<[root_entity].flag[dmodel_model_id]>.<[animation]>]>
+        - if <[timespot]> > <[animation_data.length]>:
+            - choose <[animation_data.loop]>:
+                - case loop:
+                    - define timespot <[timespot].mod[<[animation_data.length]>]>
+                - case once:
+                    - flag server dmodels_anim_active.<[root_entity].uuid>:!
+                    - if <[root_entity].has_flag[dmodels_default_animation]>:
+                        - run dmodels_animate def.root_entity:<[root_entity]> def.animation:<[root_entity].flag[dmodels_default_animation]>
+                    - else:
+                        - run dmodels_reset_model_position def.root_entity:<[root_entity]>
+                    - stop
+                - case hold:
+                    - define timespot <[animation_data.length]>
+                    - flag server dmodels_anim_active.<[root_entity].uuid>:!
+        - define center <[root_entity].location.with_pitch[0].below[0.72]>
+        - define yaw_mod <[root_entity].location.yaw.add[180].to_radians>
+        - define parentage <map>
+        - foreach <[animation_data.animators]> key:part_id as:animator:
+            - define framedata.position 0,0,0
+            - define framedata.rotation 0,0,0
+            - foreach position|rotation as:channel:
+                - define relevant_frames <[animator.frames].filter[get[channel].equals[<[channel]>]]>
+                - define before_frame <[relevant_frames].filter[get[time].is_less_than_or_equal_to[<[timespot]>]].last||null>
+                - define after_frame <[relevant_frames].filter[get[time].is_more_than_or_equal_to[<[timespot]>]].first||null>
+                - if <[before_frame]> == null:
+                    - define before_frame <[after_frame]>
+                - if <[after_frame]> == null:
+                    - define after_frame <[before_frame]>
+                - if <[before_frame]> == null:
+                    - define data 0,0,0
                 - else:
-                    - run dmodels_reset_model_position def.root_entity:<[root_entity]>
-                - stop
-            - case hold:
-                - define timespot <[animation_data.length]>
-                - flag server dmodels_anim_active.<[root_entity].uuid>:!
-    - define center <[root_entity].location.with_pitch[0].below[0.72]>
-    - define yaw_mod <[root_entity].location.yaw.add[180].to_radians>
-    - define parentage <map>
-    - foreach <[animation_data.animators]> key:part_id as:animator:
-        - define framedata.position 0,0,0
-        - define framedata.rotation 0,0,0
-        - foreach position|rotation as:channel:
-            - define relevant_frames <[animator.frames].filter[get[channel].equals[<[channel]>]]>
-            - define before_frame <[relevant_frames].filter[get[time].is_less_than_or_equal_to[<[timespot]>]].last||null>
-            - define after_frame <[relevant_frames].filter[get[time].is_more_than_or_equal_to[<[timespot]>]].first||null>
-            - if <[before_frame]> == null:
-                - define before_frame <[after_frame]>
-            - if <[after_frame]> == null:
-                - define after_frame <[before_frame]>
-            - if <[before_frame]> == null:
-                - define data 0,0,0
-            - else:
-                - define time_range <[after_frame.time].sub[<[before_frame.time]>]>
-                - if <[time_range]> == 0:
-                    - define time_percent 0
+                    - define time_range <[after_frame.time].sub[<[before_frame.time]>]>
+                    - if <[time_range]> == 0:
+                        - define time_percent 0
+                    - else:
+                        - define time_percent <[timespot].sub[<[before_frame.time]>].div[<[time_range]>]>
+                    - choose <[before_frame.interpolation]>:
+                        - case catmullrom:
+                            - define before_extra <[relevant_frames].filter[get[time].is_less_than[<[before_frame.time]>]].last||null>
+                            - if <[before_extra]> == null:
+                                - define before_extra <[animation_data.loop].equals[loop].if_true[<[relevant_frames].last>].if_false[<[before_frame]>]>
+                            - define after_extra <[relevant_frames].filter[get[time].is_more_than[<[after_frame.time]>]].first||null>
+                            - if <[after_extra]> == null:
+                                - define after_extra <[animation_data.loop].equals[loop].if_true[<[relevant_frames].first>].if_false[<[after_frame]>]>
+                            - define p0 <[before_extra.data].as_location>
+                            - define p1 <[before_frame.data].as_location>
+                            - define p2 <[after_frame.data].as_location>
+                            - define p3 <[after_extra.data].as_location>
+                            - define data <proc[dmodels_catmullrom_proc].context[<[p0]>|<[p1]>|<[p2]>|<[p3]>|<[time_percent]>]>
+                        - case linear:
+                            - define data <[after_frame.data].as_location.sub[<[before_frame.data]>].mul[<[time_percent]>].add[<[before_frame.data]>].xyz>
+                        - case step:
+                            - define data <[before_frame.data]>
+                - define framedata.<[channel]> <[data]>
+            - define this_part <[model_data.<[part_id]>]>
+            - define this_rots <[this_part.rotation].split[,].parse[to_radians]>
+            - define pose <[this_rots].get[1].mul[-1]>,<[this_rots].get[2].mul[-1]>,<[this_rots].get[3]>
+            - define parent_id <[this_part.parent]>
+            - define parent_pos <location[<[parentage.<[parent_id]>.position]||0,0,0>]>
+            - define parent_rot <location[<[parentage.<[parent_id]>.rotation]||0,0,0>]>
+            - define parent_offset <location[<[parentage.<[parent_id]>.offset]||0,0,0>]>
+            - define parent_raw_offset <[model_data.<[parent_id]>.origin]||0,0,0>
+            - define rel_offset <location[<[this_part.origin]>].sub[<[parent_raw_offset]>]>
+            - define rot_offset <[rel_offset].proc[dmodels_rot_proc].context[<[parent_rot]>]>
+            - define new_pos <[framedata.position].as_location.proc[dmodels_rot_proc].context[<[parent_rot]>].add[<[rot_offset]>].add[<[parent_pos]>]>
+            - define new_rot <[framedata.rotation].as_location.add[<[parent_rot]>].add[<[pose]>]>
+            - define parentage.<[part_id]>.position <[new_pos]>
+            - define parentage.<[part_id]>.rotation <[new_rot]>
+            - define parentage.<[part_id]>.offset <[rot_offset].add[<[parent_offset]>]>
+            - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
+                - teleport <[ent]> <[center].add[<[new_pos].div[16].rotate_around_y[<[yaw_mod].mul[-1]>]>]>
+                - adjust <[ent]> reset_client_location
+                - define radian_rot <[new_rot].xyz.split[,]>
+                - define pose <[radian_rot].get[1]>,<[radian_rot].get[2]>,<[radian_rot].get[3]>
+                - if <[delay_pose]>:
+                    - adjust <[ent]> armor_pose:[head=<[ent].flag[dmodels_next_pose].if_null[<[ent].flag[dmodel_def_pose]>]>]
+                    - flag <[ent]> dmodels_next_pose:<[pose]>
                 - else:
-                    - define time_percent <[timespot].sub[<[before_frame.time]>].div[<[time_range]>]>
-                - choose <[before_frame.interpolation]>:
-                    - case catmullrom:
-                        - define before_extra <[relevant_frames].filter[get[time].is_less_than[<[before_frame.time]>]].last||null>
-                        - if <[before_extra]> == null:
-                            - define before_extra <[animation_data.loop].equals[loop].if_true[<[relevant_frames].last>].if_false[<[before_frame]>]>
-                        - define after_extra <[relevant_frames].filter[get[time].is_more_than[<[after_frame.time]>]].first||null>
-                        - if <[after_extra]> == null:
-                            - define after_extra <[animation_data.loop].equals[loop].if_true[<[relevant_frames].first>].if_false[<[after_frame]>]>
-                        - define p0 <[before_extra.data].as_location>
-                        - define p1 <[before_frame.data].as_location>
-                        - define p2 <[after_frame.data].as_location>
-                        - define p3 <[after_extra.data].as_location>
-                        - define data <proc[dmodels_catmullrom_proc].context[<[p0]>|<[p1]>|<[p2]>|<[p3]>|<[time_percent]>]>
-                    - case linear:
-                        - define data <[after_frame.data].as_location.sub[<[before_frame.data]>].mul[<[time_percent]>].add[<[before_frame.data]>].xyz>
-                    - case step:
-                        - define data <[before_frame.data]>
-            - define framedata.<[channel]> <[data]>
-        - define this_part <[model_data.<[part_id]>]>
-        - define this_rots <[this_part.rotation].split[,].parse[to_radians]>
-        - define pose <[this_rots].get[1].mul[-1]>,<[this_rots].get[2].mul[-1]>,<[this_rots].get[3]>
-        - define parent_id <[this_part.parent]>
-        - define parent_pos <location[<[parentage.<[parent_id]>.position]||0,0,0>]>
-        - define parent_rot <location[<[parentage.<[parent_id]>.rotation]||0,0,0>]>
-        - define parent_offset <location[<[parentage.<[parent_id]>.offset]||0,0,0>]>
-        - define parent_raw_offset <[model_data.<[parent_id]>.origin]||0,0,0>
-        - define rel_offset <location[<[this_part.origin]>].sub[<[parent_raw_offset]>]>
-        - define rot_offset <[rel_offset].proc[dmodels_rot_proc].context[<[parent_rot]>]>
-        - define new_pos <[framedata.position].as_location.proc[dmodels_rot_proc].context[<[parent_rot]>].add[<[rot_offset]>].add[<[parent_pos]>]>
-        - define new_rot <[framedata.rotation].as_location.add[<[parent_rot]>].add[<[pose]>]>
-        - define parentage.<[part_id]>.position <[new_pos]>
-        - define parentage.<[part_id]>.rotation <[new_rot]>
-        - define parentage.<[part_id]>.offset <[rot_offset].add[<[parent_offset]>]>
-        - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
-            - teleport <[ent]> <[center].add[<[new_pos].div[16].rotate_around_y[<[yaw_mod].mul[-1]>]>]>
-            - adjust <[ent]> reset_client_location
-            - define radian_rot <[new_rot].xyz.split[,]>
-            - define pose <[radian_rot].get[1]>,<[radian_rot].get[2]>,<[radian_rot].get[3]>
-            - if <[delay_pose]>:
-                - adjust <[ent]> armor_pose:[head=<[ent].flag[dmodels_next_pose].if_null[<[ent].flag[dmodel_def_pose]>]>]
-                - flag <[ent]> dmodels_next_pose:<[pose]>
-            - else:
-                - adjust <[ent]> armor_pose:[head=<[pose]>]
-                - adjust <[ent]> send_update_packets
+                    - adjust <[ent]> armor_pose:[head=<[pose]>]
+                    - adjust <[ent]> send_update_packets
 
 dmodels_rot_proc:
     type: procedure
@@ -271,8 +293,16 @@ dmodels_animator:
         # Cleanup
         - flag server dmodels_data:!
         - flag server dmodels_anim_active:!
+        - if <script[dmodels_config].data_key[load_on_start].equals[true]>:
+          - define files <server.list_files[data/dmodels]>
+          - foreach <[files]> as:file:
+            - define check <[file].split[.].contains[bbmodel]>
+            - if <[check].is_truthy>:
+              - run dmodels_load_bbmodel def:<[file].replace[.bbmodel].with[<empty>]>
         on tick server_flagged:dmodels_anim_active:
-        - foreach <server.flag[dmodels_anim_active]> key:root_id:
+        #Console spam when reloading models this prevents that
+        - if !<server.has_flag[dmodels_reloading]>:
+          - foreach <server.flag[dmodels_anim_active]> key:root_id:
             - define root <entity[<[root_id]>]||null>
             - if <[root].is_spawned||false>:
                 - run dmodels_move_to_frame def.root_entity:<[root]> def.animation:<[root].flag[dmodels_animation_id]> def.timespot:<[root].flag[dmodels_anim_time].div[20]> def.delay_pose:true
