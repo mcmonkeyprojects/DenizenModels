@@ -16,7 +16,8 @@
 # then is able to display them in minecraft and even animate them, by spawning and moving invisible armor stands with resource pack items on their heads.
 #
 # Installation:
-# 1: Copy the "scripts/dmodels" folder to your "plugins/Denizen/scripts" and "/ex reload"
+# 1: Edit your "plugins/Denizen/config.yml", find "File:", and "Allow read" and "Allow write" inside, and set them both to "true", then use "/denizen reload config"
+# 2: Copy the "scripts/dmodels" folder to your "plugins/Denizen/scripts" and "/ex reload"
 # 3: Note that you must know the basics of operating resource packs - the pack content will be generated for you, but you must know how to install a pack on your client and/or distribute it to players as appropriate
 # 4: Take a look at the config settings in the bottom of this file in case you want to change any of them.
 #

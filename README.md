@@ -25,7 +25,7 @@ Documented in the header of the `dmodels_main.dsc` script.
 
 ### Status
 
-Secondary beta release. Functions for testing purposes, but not the most user friendly. A lot more is planned for this. Some things are currently being changed around from what they were in the prior beta.
+Third beta release. Functions for most basic purposes, but not the most user friendly. More is planned for this. Some things are currently being changed around from what they were in the prior betas.
 
 ### Licensing pre-note:
 
