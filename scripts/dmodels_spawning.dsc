@@ -26,7 +26,9 @@ dmodels_spawn_model:
     - define center <[location].with_pitch[0].below[0.72]>
     - define yaw_mod <[location].yaw.add[180].to_radians>
     - spawn dmodel_part_stand <[location]> save:root
-    - flag <entry[root].spawned_entity> dmodel_model_id:<[model_name]>
+    - define root <entry[root].spawned_entity>
+    - flag <[root]> dmodel_model_id:<[model_name]>
+    - flag <[root]> dmodel_root:<[root]>
     - define parentage <map>
     - define model_data <server.flag[dmodels_data.model_<[model_name]>]>
     - define tracking_range <[tracking_range].if_null[<script[dmodels_config].data_key[tracking_range]>]>
@@ -52,10 +54,10 @@ dmodels_spawn_model:
             - adjust <entry[spawned].spawned_entity> tracking_range:<[tracking_range]>
         - flag <entry[spawned].spawned_entity> dmodel_def_pose:<[new_rot].xyz>
         - flag <entry[spawned].spawned_entity> dmodel_def_offset:<[new_pos].div[16]>
-        - flag <entry[spawned].spawned_entity> dmodel_root:<entry[root].spawned_entity>
-        - flag <entry[root].spawned_entity> dmodel_parts:->:<entry[spawned].spawned_entity>
-        - flag <entry[root].spawned_entity> dmodel_anim_part.<[id]>:->:<entry[spawned].spawned_entity>
-    - determine <entry[root].spawned_entity>
+        - flag <entry[spawned].spawned_entity> dmodel_root:<[root]>
+        - flag <[root]> dmodel_parts:->:<entry[spawned].spawned_entity>
+        - flag <[root]> dmodel_anim_part.<[id]>:->:<entry[spawned].spawned_entity>
+    - determine <[root]>
 
 dmodels_delete:
     type: task

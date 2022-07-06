@@ -7,11 +7,11 @@
 #
 # @author mcmonkey
 # @date 2022/06/01
-# @updated 2022/06/13
+# @updated 2022/07/06
 # @denizen-build REL-1772
-# @script-version 1.3
+# @script-version 1.4
 #
-# This takes BlockBench "BBModel" files, converts them (via external program) to resource pack + Denizen-compatible file,
+# This takes BlockBench "BBModel" files, converts them to a client-ready resource pack and Denizen internal data,
 # then is able to display them in minecraft and even animate them, by spawning and moving invisible armor stands with resource pack items on their heads.
 #
 # Installation:
@@ -96,6 +96,15 @@
 #                 animation: The name of the animation to play (as set in BlockBench).
 #                 timespot: The time (in seconds) from the start of the animation to select as the frame.
 #                 delay_pose: 'true' if playing fluidly to offset the pose application over time, 'false' to snap exactly to frame position.
+#     Flags:
+#         Every entity spawned by DModels has the flag 'dmodel_root', that refers up to the root entity.
+#         The root entity has the following flags:
+#             'dmodel_model_id': the name of the model used.
+#             'dmodel_parts': a list of all part entities spawned.
+#             'dmodel_anim_part.<ID_HERE>': a mapping of outline IDs to the part entity spawned for them.
+#             'dmodels_animation_id': only if the model is animating automatically, contains the animation ID.
+#             'dmodels_anim_time': only if the model is animating automatically, contains the progress through the current animation as a number representing time.
+#        Additional flags are present on both the root and on parts, but are not considered API - use at your own risk.
 #
 ################################################
 

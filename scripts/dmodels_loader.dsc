@@ -41,7 +41,7 @@ dmodels_load_bbmodel:
         - stop
     # =============== Pack validation ===============
     - if !<server.has_flag[data/dmodels/res_pack/pack.mcmeta]>:
-        - filewrite path:data/dmodels/res_pack/pack.mcmeta data:<map.with[pack].as[<map[pack_format=8;description=dModels_AutoPack_Default]>].to_json[native_types=true;indent=4].utf8_encode>
+        - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:data/dmodels/res_pack/pack.mcmeta def.data:<map.with[pack].as[<map[pack_format=8;description=dModels_AutoPack_Default]>].to_json[native_types=true;indent=4].utf8_encode>
     # =============== Textures loading ===============
     - define tex_id 0
     - foreach <[data.textures]||<list>> as:texture:
@@ -53,7 +53,7 @@ dmodels_load_bbmodel:
             - debug error "[DModels] Can't load bbmodel for '<[model_name]>': invalid texture source data."
             - stop
         - define texture_output_path <[textures_root]>/<[texname]>.png
-        - ~filewrite path:<[texture_output_path]> data:<[raw_source].after[,].base64_to_binary>
+        - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[texture_output_path]> def.data:<[raw_source].after[,].base64_to_binary>
         - define proper_path dmodels/<[model_name]>/<[texname]>
         - define mc_texture_data.<[tex_id]> <[proper_path]>
         - if <[texture.particle]||false>:
@@ -105,7 +105,7 @@ dmodels_load_bbmodel:
                     - else:
                         - define anim_map.data <[data_points.x]>,<[data_points.y]>,<[data_points.z]>
                     - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames:->:<[anim_map]>
-                # Time sort
+                # Sort frames by time (why is this not done by default? BlockBench is weird)
                 - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames <[animation_list.<[animation.name]>.animators.<[o_uuid]>.frames].sort_by_value[get[time]]>
     - flag server dmodels_data.animations_<[model_name]>:<[animation_list]>
     # =============== Item model file generation ===============
@@ -149,7 +149,7 @@ dmodels_load_bbmodel:
             - define model_json.display.head.translation <list[32|25|32]>
             - define model_json.display.head.scale <list[4|4|4]>
             - define modelpath item/dmodels/<[model_name]>/<[outline.name]>
-            - ~filewrite path:<[models_root]>/<[outline.name]>.json data:<[model_json].to_json[native_types=true;indent=4].utf8_encode>
+            - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[models_root]>/<[outline.name]>.json def.data:<[model_json].to_json[native_types=true;indent=4].utf8_encode>
             - define cmd 0
             - define min_cmd 1000
             - foreach <[override_item_data.overrides]||<list>> as:override:
@@ -164,9 +164,20 @@ dmodels_load_bbmodel:
         # This sets the actual live usage flag data
         - flag server dmodels_data.model_<[model_name]>.<[outline.uuid]>:<[outline]>
     - if <[overrides_changed]>:
-        - ~filewrite path:<[override_item_filepath]> data:<[override_item_data].to_json[native_types=true;indent=4].utf8_encode>
+        - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[override_item_filepath]> def.data:<[override_item_data].to_json[native_types=true;indent=4].utf8_encode>
+    # Ensure all filewrites are done before ending the task
+    - waituntil rate:1t max:5m <server.flag[dmodels_data.temp_<[model_name]>.filewrites].is_empty||true>
     # Final clear of temp data
     - flag server dmodels_data.temp_<[model_name]>:!
+
+dmodels_multiwaitable_filewrite:
+    type: task
+    debug: false
+    definitions: key|path|data
+    script:
+    - flag server dmodels_data.temp_<[key]>.filewrites.<[path].escaped>
+    - ~filewrite path:<[path]> data:<[data]>
+    - flag server dmodels_data.temp_<[key]>.filewrites.<[path].escaped>:!
 
 dmodels_facefix:
     type: procedure
