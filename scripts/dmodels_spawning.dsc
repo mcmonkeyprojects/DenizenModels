@@ -17,7 +17,7 @@ dmodel_part_stand:
 dmodels_spawn_model:
     type: task
     debug: false
-    definitions: model_name|location|tracking_range
+    definitions: model_name|location|tracking_range|fake_to
     script:
     - if !<server.has_flag[dmodels_data.model_<[model_name]>]>:
         - debug error "[DModels] cannot spawn model <[model_name]>, model not loaded"
@@ -25,8 +25,12 @@ dmodels_spawn_model:
     # 0.72 is arbitrary but seems to align the bottom to the ground from visual testing
     - define center <[location].with_pitch[0].below[0.72]>
     - define yaw_mod <[location].yaw.add[180].to_radians>
-    - spawn dmodel_part_stand <[location]> save:root
-    - define root <entry[root].spawned_entity>
+    - if <[fake_to].exists>:
+        - fakespawn dmodel_part_stand <[location]> save:root d:infinite
+        - define root <entry[root].faked_entity>
+    - else:
+        - spawn dmodel_part_stand <[location]> save:root
+        - define root <entry[root].spawned_entity>
     - flag <[root]> dmodel_model_id:<[model_name]>
     - flag <[root]> dmodel_root:<[root]>
     - define parentage <map>
@@ -49,14 +53,21 @@ dmodels_spawn_model:
         - define parentage.<[id]>.offset <[rot_offset].add[<[parent_offset]>]>
         - if !<[part.item].exists>:
             - foreach next
-        - spawn dmodel_part_stand[equipment=[helmet=<[part.item]>];armor_pose=[head=<[new_rot].xyz>]] <[center].add[<[new_pos].div[16].rotate_around_y[<[yaw_mod].mul[-1]>]>]> save:spawned
+        - define to_spawn_ent dmodel_part_stand[equipment=[helmet=<[part.item]>];armor_pose=[head=<[new_rot].xyz>]]
+        - define to_spawn_loc <[center].add[<[new_pos].div[16].rotate_around_y[<[yaw_mod].mul[-1]>]>]>
+        - if <[fake_to].exists>:
+            - fakespawn <[to_spawn_ent]> <[to_spawn_loc]> save:spawned d:infinite
+            - define spawned <entry[spawned].faked_entity>
+        - else:
+            - spawn <[to_spawn_ent]> <[to_spawn_loc]> save:spawned
+            - define spawned <entry[spawned].spawned_entity>
         - if <[tracking_range]> > 0:
-            - adjust <entry[spawned].spawned_entity> tracking_range:<[tracking_range]>
-        - flag <entry[spawned].spawned_entity> dmodel_def_pose:<[new_rot].xyz>
-        - flag <entry[spawned].spawned_entity> dmodel_def_offset:<[new_pos].div[16]>
-        - flag <entry[spawned].spawned_entity> dmodel_root:<[root]>
-        - flag <[root]> dmodel_parts:->:<entry[spawned].spawned_entity>
-        - flag <[root]> dmodel_anim_part.<[id]>:->:<entry[spawned].spawned_entity>
+            - adjust <[spawned]> tracking_range:<[tracking_range]>
+        - flag <[spawned]> dmodel_def_pose:<[new_rot].xyz>
+        - flag <[spawned]> dmodel_def_offset:<[new_pos].div[16]>
+        - flag <[spawned]> dmodel_root:<[root]>
+        - flag <[root]> dmodel_parts:->:<[spawned]>
+        - flag <[root]> dmodel_anim_part.<[id]>:->:<[spawned]>
     - determine <[root]>
 
 dmodels_delete:
@@ -100,7 +111,7 @@ dmodels_animate:
         - stop
     - flag <[root_entity]> dmodels_animation_id:<[animation]>
     - flag <[root_entity]> dmodels_anim_time:0
-    - flag server dmodels_anim_active.<[root_entity].uuid>
+    - flag server dmodels_anim_active.<[root_entity].uuid>:<[root_entity]>
 
 dmodels_move_to_frame:
     type: task
@@ -213,7 +224,6 @@ dmodels_catmullrom_proc:
     # Zero distances are impossible to calculate
     - if <[p2].sub[<[p1]>].vector_length> < 0.01:
         - determine <[p2]>
-    # TODO: Validate this mess
     # Based on https://en.wikipedia.org/wiki/Centripetal_Catmull%E2%80%93Rom_spline#Code_example_in_Unreal_C++
     # With safety checks added for impossible situations
     - define t0 0
@@ -241,13 +251,8 @@ dmodels_animator:
     type: world
     debug: false
     events:
-        on server start priority:-1000:
-        # Cleanup
-        - flag server dmodels_data:!
-        - flag server dmodels_anim_active:!
         on tick server_flagged:dmodels_anim_active:
-        - foreach <server.flag[dmodels_anim_active]> key:root_id:
-            - define root <entity[<[root_id]>]||null>
+        - foreach <server.flag[dmodels_anim_active]> as:root:
             - if <[root].is_spawned||false>:
                 - run dmodels_move_to_frame def.root_entity:<[root]> def.animation:<[root].flag[dmodels_animation_id]> def.timespot:<[root].flag[dmodels_anim_time].div[20]> def.delay_pose:true
                 - flag <[root]> dmodels_anim_time:++

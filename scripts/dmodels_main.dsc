@@ -6,6 +6,7 @@
 # +---------------------------
 #
 # @author mcmonkey
+# @contributors Max^
 # @date 2022/06/01
 # @updated 2022/07/06
 # @denizen-build REL-1772
@@ -71,6 +72,7 @@
 #                 model_name: The name of the model to spawn, must already have been loaded via 'dmodels_load_bbmodel'.
 #                 location: The location to spawn the model at.
 #                 tracking_range: (OPTIONAL) can override the global tracking_range setting in the config below per-model if desired.
+#                 fake_to: (OPTIONAL) list of players to fake-spawn the model to. If left off, will use a real (serverside) entity spawn.
 #             Supplies determination: EntityTag of the model root entity.
 #         dmodels_delete
 #             Usage: Deletes a spawned model.
