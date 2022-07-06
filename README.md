@@ -10,7 +10,8 @@ There are three scripts:
 - `dmodels_main.dsc` is the 'main' file - it contains a detailed informational header with usage details, and a configuration section.
     - Look through that file to learn how to use dModels.
 - `dmodels_loader.dsc` is the script that handles loading in `.bbmodel` files to Denizen and building the resource pack.
-- `dmodels_spawning.dsc` is the API script that actually handles the spawning/moving/animating/etc of models in-game.
+- `dmodels_spawning.dsc` is the coremost API script that handles the spawning/deleting/positioning of models in-game.
+- `dmodels_animating.dsc` is the script that handles animation playback for models.
 
 ### Related Links
 
