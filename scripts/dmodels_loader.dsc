@@ -13,6 +13,10 @@ dmodels_load_bbmodel:
     - define pack_root data/dmodels/res_pack
     - define models_root <[pack_root]>/assets/minecraft/models/item/dmodels/<[model_name]>
     - define textures_root <[pack_root]>/assets/minecraft/textures/dmodels/<[model_name]>
+    - define item_validate <item[<script[dmodels_config].data_key[item]>]||null>
+    - if <[item_validate]> == null:
+      - debug error "[Denizen Models] Item must be valid Example: potion"
+      - stop
     - define override_item_filepath <[pack_root]>/assets/minecraft/models/item/<script[dmodels_config].data_key[item]>.json
     - define file data/dmodels/<[model_name]>.bbmodel
     - define scale_factor <element[2.285].div[4]>
@@ -82,14 +86,37 @@ dmodels_load_bbmodel:
     - flag server dmodels_data.animations_<[model_name]>:!
     # =============== Animations loading ===============
     - foreach <[data.animations]||<list>> as:animation:
-        - narrate "TODO: Animation stuff <[animation.name]>"
-        # TODO: Animation loading stuff
+        - define animation_list.<[animation.name]>.loop <[animation.loop]>
+        - define animation_list.<[animation.name]>.override <[animation.override]>
+        - define animation_list.<[animation.name]>.anim_time_update <[animation.anim_time_update]>
+        - define animation_list.<[animation.name]>.blend_weight <[animation.blend_weight]>
+        - define animation_list.<[animation.name]>.length <[animation.length]>
+        - define animator_data <[animation.animators]>
+        - foreach <server.flag[dmodels_data.temp_<[model_name]>.raw_outlines]> key:o_uuid as:outline_data:
+            - define animator <[animator_data.<[o_uuid]>]||null>
+            - if <[animator]> != null:
+                - define keyframes <[animator.keyframes]>
+                - foreach <[keyframes]> as:keyframe:
+                    - define anim_map.channel <[keyframe.channel].to_uppercase>
+                    - define data_points <[keyframe.data_points].first>
+                    - if <[anim_map.channel]> == ROTATION:
+                        - define anim_map.data <[data_points.x].to_radians>,<[data_points.y].to_radians>,<[data_points.z].to_radians>
+                    - else:
+                        - define anim_map.data <[data_points.x]>,<[data_points.y]>,<[data_points.z]>
+                    - define anim_map.time <[keyframe.time]>
+                    - define anim_map.interpolation <[keyframe.interpolation]>
+                    - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames:->:<[anim_map]>
+                #Time sort
+                - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames <[animation_list.<[animation.name]>.animators.<[o_uuid]>.frames].sort_by_value[get[time]]>
+            - else:
+                - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames <list>
+    - flag server dmodels_data.animations_<[model_name]>:<[animation_list]>
     # =============== Item model file generation ===============
-    - if <server.has_flag[<[override_item_filepath]>]>:
+    - if <server.has_file[<[override_item_filepath]>]>:
         - ~fileread path:<[override_item_filepath]> save:override_item
-        - define override_item_data <util.parse_yaml[<entry[override_item].utf8_decode>]>
+        - define override_item_data <util.parse_yaml[<entry[override_item].data.utf8_decode>]>
     - else:
-        - definemap override_item_data parent:minecraft:item/generated textures:<map[layer0=minecraft:item/leather_horse_armor]>
+        - definemap override_item_data parent:minecraft:item/generated textures:<map[layer0=minecraft:item/<script[dmodels_config].data_key[item]>]>
     - define overrides_changed false
     - foreach <server.flag[dmodels_data.temp_<[model_name]>.raw_outlines]> as:outline:
         - define outline_origin <location[<[outline.origin]>]>
