@@ -14,34 +14,6 @@ dmodel_part_stand:
         visible: false
         is_small: true
 
-dmodels_load_model:
-    type: task
-    debug: false
-    definitions: model_name
-    script:
-    - define yamlid dmodels_<[model_name]>
-    - define filename data/models/<[model_name]>.dmodel.yml
-    - if !<server.has_file[<[filename]>]>:
-        - debug error "[DModels] Invalid model <[model_name]>, file does not exist: <[filename]>, cannot load"
-        - stop
-    - ~yaml id:<[yamlid]> load:<[filename]>
-    - define order <yaml[<[yamlid]>].read[order]>
-    - define parts <yaml[<[yamlid]>].read[models]>
-    - define animations <yaml[<[yamlid]>].read[animations]||<map>>
-    - yaml unload id:<[yamlid]>
-    - foreach <[order]> as:id:
-        - define raw_parts.<[id]> <[parts.<[id]>]>
-    - foreach <[animations]> key:name as:anim:
-        - foreach <[order]> as:id:
-            - if <[anim.animators].contains[<[id]>]>:
-                - define raw_animators.<[id]>.frames <[anim.animators.<[id]>.frames].sort_by_value[get[time]]>
-            - else:
-                - define raw_animators.<[id]> <map[frames=<list>]>
-        - define anim.animators <[raw_animators]>
-        - define raw_animations.<[name]> <[anim]>
-    - flag server dmodels_data.model_<[model_name]>:<[raw_parts]>
-    - flag server dmodels_data.animations_<[model_name]>:<[raw_animations]>
-
 dmodels_spawn_model:
     type: task
     debug: false

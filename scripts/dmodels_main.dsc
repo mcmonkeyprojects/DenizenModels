@@ -59,15 +59,16 @@
 #
 # API details:
 #     Runnable Tasks:
-#         dmodels_load_model
-#             Usage: Loads a model from source data by name into server memory (flags).
+#         dmodels_load_bbmodel
+#             Usage: Loads a model from source ".bbmodel" file by name into server data (flags). Also builds the resource pack entries for it.
+#                    Should be called well in advance, when the model is added or changed. Does not need to be re-called until the model is changed again.
 #             Input definitions:
-#                 model_name: The name of the model to load, must correspond to the relevant ".dmodel.yml" file.
+#                 model_name: The name of the model to load, must correspond to the relevant ".bbmodel" file.
 #             This task should be ~waited for.
 #         dmodels_spawn_model
 #             Usage: Spawns a single instance of a model using real armor stand entities at a location.
 #             Input definitions:
-#                 model_name: The name of the model to spawn, must already be loaded via 'dmodels_load_model'.
+#                 model_name: The name of the model to spawn, must already have been loaded via 'dmodels_load_bbmodel'.
 #                 location: The location to spawn the model at.
 #                 tracking_range: (OPTIONAL) can override the global tracking_range setting in the config below per-model if desired.
 #             Supplies determination: EntityTag of the model root entity.

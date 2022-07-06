@@ -15,7 +15,7 @@ dmodels_load_bbmodel:
     - define textures_root <[pack_root]>/assets/minecraft/textures/dmodels/<[model_name]>
     - define item_validate <item[<script[dmodels_config].data_key[item]>]||null>
     - if <[item_validate]> == null:
-      - debug error "[Denizen Models] Item must be valid Example: potion"
+      - debug error "[DModels] Item must be valid Example: potion"
       - stop
     - define override_item_filepath <[pack_root]>/assets/minecraft/models/item/<script[dmodels_config].data_key[item]>.json
     - define file data/dmodels/<[model_name]>.bbmodel
@@ -23,21 +23,21 @@ dmodels_load_bbmodel:
     - define mc_texture_data <map>
     - flag server dmodels_data.temp_<[model_name]>:!
     # =============== BBModel loading and validation ===============
-    - if !<server.has_file[<[file]>]>:
-        - debug error "Cannot load model '<[model_name]>' because file '<[file]>' does not exist."
+    - if !<util.has_file[<[file]>]>:
+        - debug error "[DModels] Cannot load model '<[model_name]>' because file '<[file]>' does not exist."
         - stop
     - ~fileread path:<[file]> save:filedata
     - define data <util.parse_yaml[<entry[filedata].data.utf8_decode||>]||>
     - if !<[data].is_truthy>:
-        - debug error "Something went wrong trying to load BBModel data for model '<[model_name]>' - fileread invalid."
+        - debug error "[DModels] Something went wrong trying to load BBModel data for model '<[model_name]>' - fileread invalid."
         - stop
     - define meta <[data.meta]||>
     - define resolution <[data.resolution]||>
     - if !<[meta].is_truthy> || !<[resolution].is_truthy>:
-        - debug error "Something went wrong trying to load BBModel data for model '<[model_name]>' - possibly not a valid BBModel file?"
+        - debug error "[DModels] Something went wrong trying to load BBModel data for model '<[model_name]>' - possibly not a valid BBModel file?"
         - stop
     - if !<[data.elements].exists>:
-        - debug error "Can't load bbmodel for '<[model_name]>' - file has no elements?"
+        - debug error "[DModels] Can't load bbmodel for '<[model_name]>' - file has no elements?"
         - stop
     # =============== Pack validation ===============
     - if !<server.has_flag[data/dmodels/res_pack/pack.mcmeta]>:
@@ -50,7 +50,7 @@ dmodels_load_bbmodel:
             - define texname <[texname].before[.png]>
         - define raw_source <[texture.source]||>
         - if !<[raw_source].starts_with[data:image/png;base64,]>:
-            - debug error "Can't load bbmodel for '<[model_name]>': invalid texture source data."
+            - debug error "[DModels] Can't load bbmodel for '<[model_name]>': invalid texture source data."
             - stop
         - define texture_output_path <[textures_root]>/<[texname]>.png
         - ~filewrite path:<[texture_output_path]> data:<[raw_source].after[,].base64_to_binary>
@@ -94,25 +94,22 @@ dmodels_load_bbmodel:
         - define animator_data <[animation.animators]>
         - foreach <server.flag[dmodels_data.temp_<[model_name]>.raw_outlines]> key:o_uuid as:outline_data:
             - define animator <[animator_data.<[o_uuid]>]||null>
-            - if <[animator]> != null:
-                - define keyframes <[animator.keyframes]>
-                - foreach <[keyframes]> as:keyframe:
-                    - define anim_map.channel <[keyframe.channel].to_uppercase>
+            - if <[animator]> == null:
+                - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames <list>
+            - else:
+                - foreach <[animator.keyframes]> as:keyframe:
+                    - definemap anim_map channel:<[keyframe.channel]> time:<[keyframe.time]> interpolation:<[keyframe.interpolation]>
                     - define data_points <[keyframe.data_points].first>
-                    - if <[anim_map.channel]> == ROTATION:
+                    - if <[anim_map.channel]> == rotation:
                         - define anim_map.data <[data_points.x].to_radians>,<[data_points.y].to_radians>,<[data_points.z].to_radians>
                     - else:
                         - define anim_map.data <[data_points.x]>,<[data_points.y]>,<[data_points.z]>
-                    - define anim_map.time <[keyframe.time]>
-                    - define anim_map.interpolation <[keyframe.interpolation]>
                     - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames:->:<[anim_map]>
-                #Time sort
+                # Time sort
                 - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames <[animation_list.<[animation.name]>.animators.<[o_uuid]>.frames].sort_by_value[get[time]]>
-            - else:
-                - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames <list>
     - flag server dmodels_data.animations_<[model_name]>:<[animation_list]>
     # =============== Item model file generation ===============
-    - if <server.has_file[<[override_item_filepath]>]>:
+    - if <util.has_file[<[override_item_filepath]>]>:
         - ~fileread path:<[override_item_filepath]> save:override_item
         - define override_item_data <util.parse_yaml[<entry[override_item].data.utf8_decode>]>
     - else:
