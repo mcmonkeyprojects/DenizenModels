@@ -61,7 +61,7 @@ dmodels_load_bbmodel:
         - define tex_id:++
     # =============== Elements loading ===============
     - foreach <[data.elements]> as:element:
-        - if <[element.type]> != cube:
+        - if <[element.type]||cube> != cube:
             - foreach next
         - define element.origin <[element.origin].separated_by[,]||0,0,0>
         - define element.rotation <[element.rotation].separated_by[,]||0,0,0>
@@ -107,7 +107,8 @@ dmodels_load_bbmodel:
                     - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames:->:<[anim_map]>
                 # Sort frames by time (why is this not done by default? BlockBench is weird)
                 - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames <[animation_list.<[animation.name]>.animators.<[o_uuid]>.frames].sort_by_value[get[time]]>
-    - flag server dmodels_data.animations_<[model_name]>:<[animation_list]>
+    - if <[animation_list].any||false>:
+        - flag server dmodels_data.animations_<[model_name]>:<[animation_list]>
     # =============== Item model file generation ===============
     - if <util.has_file[<[override_item_filepath]>]>:
         - ~fileread path:<[override_item_filepath]> save:override_item

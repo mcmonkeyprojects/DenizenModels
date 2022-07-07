@@ -8,8 +8,8 @@
 # @author mcmonkey
 # @contributors Max^
 # @date 2022/06/01
-# @updated 2022/07/06
-# @denizen-build REL-1772
+# @updated 2022/07/07
+# @denizen-build REL-1773
 # @script-version 1.4
 #
 # This takes BlockBench "BBModel" files, converts them to a client-ready resource pack and Denizen internal data,

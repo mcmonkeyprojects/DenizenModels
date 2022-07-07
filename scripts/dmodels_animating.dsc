@@ -162,7 +162,7 @@ dmodels_catmullrom_proc:
     # FVector C  = ( t2-t )/( t2-t1 )*B1 + ( t-t1 )/( t2-t1 )*B2;
     - determine <[b1].mul[<[t2].sub[<[t]>].div[<[t2].sub[<[t1]>]>]>].add[<[b2].mul[<[t].sub[<[t1]>].div[<[t2].sub[<[t1]>]>]>]>]>
 
-dmodels_animator:
+dmodels_animator_world:
     type: world
     debug: false
     events:
