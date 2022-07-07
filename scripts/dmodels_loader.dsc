@@ -3,6 +3,18 @@
 # Refer to the header of "dmodels_main.dsc" for more information.
 ###########################
 
+dmodels_bbmodel_load_all:
+    type: task
+    debug: false
+    script:
+    - define files <util.list_files[data/dmodels]||null>
+    - if <[files]> != null:
+      - foreach <[files]> as:file:
+        - define file_validate <[file].split[.]>
+        - if <[file_validate].contains[bbmodel]>:
+          - define model_name <[file].replace[.bbmodel].with[<empty>]>
+          - ~run dmodels_load_bbmodel def:<[model_name]>
+          - announce to_console "[DModels] Model <[model_name]> has been loaded."
 
 dmodels_load_bbmodel:
     type: task
