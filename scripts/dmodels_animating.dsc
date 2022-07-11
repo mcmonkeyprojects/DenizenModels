@@ -121,7 +121,106 @@ dmodels_rot_proc:
     debug: false
     definitions: loc|rot
     script:
-    - determine <[loc].rotate_around_x[<[rot].x.mul[-1]>].rotate_around_y[<[rot].y.mul[-1]>].rotate_around_z[<[rot].z>]>
+    - define r1 <proc[dmodels_rot_quat].context[<[rot].x.mul[-1]>|x|<[loc]>]>
+    - define r2 <proc[dmodels_rot_quat].context[<[rot].y.mul[-1]>|y|<[r1]>]>
+    - determine <proc[dmodels_rot_quat].context[<[rot].z>|z|<[r2]>]>
+
+# Angle = Angle in radians
+# Axis = x,y,z
+# Vector = Vector to rotate
+dmodels_rot_quat:
+    type: procedure
+    debug: false
+    definitions: angle|axis|vector
+    script:
+    #The vector to rotate
+    - define p.w 0.0
+    - define p.x <[vector].x>
+    - define p.y <[vector].y>
+    - define p.z <[vector].z>
+    #The second quaternion
+    - define q_2 <[p]>
+    #Axis to rotate the vector
+    - choose <[axis]>:
+      - case x:
+        - define axis <location[1,0,0].normalize>
+      - case y:
+        - define axis <location[0,1,0].normalize>
+      - case z:
+        - define axis <location[0,0,1].normalize>
+    #Create quaternion from angle and axis
+    - define q.w <[angle]>
+    - define q.x <[axis].x>
+    - define q.y <[axis].y>
+    - define q.z <[axis].z>
+    #Convert quaternion to unit norm quaternion
+    - define angle <[q.w]>
+    - define vec <location[<[q.x]>,<[q.y]>,<[q.z]>].normalize>
+    - define w <[angle].mul[0.5].cos>
+    - define vec <[vec].mul[<[angle].mul[0.5].sin>]>
+    - define q.w <[w]>
+    - define q.x <[vec].x>
+    - define q.y <[vec].y>
+    - define q.z <[vec].z>
+    #Norm of the quaternion
+    - define sc <[q.w].power[2]>
+    - define vec <location[<[q.x]>,<[q.y]>,<[q.z]>]>
+    - define im.x <[vec].x.power[2]>
+    - define im.y <[vec].y.power[2]>
+    - define im.z <[vec].z.power[2]>
+    - define norm <[sc].add[<[im.x]>].add[<[im.y]>].add[<[im.z]>].sqrt>
+    #Conjugate
+    - define c_q.x <[q.x].mul[-1]>
+    - define c_q.y <[q.y].mul[-1]>
+    - define c_q.z <[q.z].mul[-1]>
+    - define c_q.w <[q.w]>
+    #Get the inverse of the quaternion
+    - define norm <[norm].power[2]>
+    - define norm <element[1].div[<[norm]>]>
+    - define sc <[c_q.w].mul[<[norm]>]>
+    - define cvec <location[<[c_q.x]>,<[c_q.y]>,<[c_q.z]>]>
+    - define im.x <[cvec].x.mul[<[norm]>]>
+    - define im.y <[cvec].y.mul[<[norm]>]>
+    - define im.z <[cvec].z.mul[<[norm]>]>
+    - define qInv.w <[sc]>
+    - define qInv.x <[im.x]>
+    - define qInv.y <[im.y]>
+    - define qInv.z <[im.z]>
+    #Quaternion multiplied by point(vector)
+    #This method of quaternion multiplication is about 35% faster than the usual one
+    #Q * P
+    - define v <location[<[q.x]>,<[q.y]>,<[q.z]>]>
+    - define v_2 <location[<[q_2.x]>,<[q_2.y]>,<[q_2.z]>]>
+    - define scalar <[q.w].mul[<[q_2.w]>].sub[<[v].proc[pmodels_dot_product].context[<[v_2]>]>]>
+    - define im <[v_2].mul[<[q.w]>].add[<[v].mul[<[q_2.w]>]>].add[<[v].proc[pmodels_cross_product].context[<[v_2]>]>]>
+    - define nq.w <[scalar]>
+    - define nq.x <[im].x>
+    - define nq.y <[im].y>
+    - define nq.z <[im].z>
+    #New Q * Q-1
+    - define q <[nq]>
+    - define q_2 <[qInv]>
+    - define v <location[<[q.x]>,<[q.y]>,<[q.z]>]>
+    - define v_2 <location[<[q_2.x]>,<[q_2.y]>,<[q_2.z]>]>
+    - define im <[v_2].mul[<[q.w]>].add[<[v].mul[<[q_2.w]>]>].add[<[v].proc[pmodels_cross_product].context[<[v_2]>]>]>
+    - define rv.x <[im].x>
+    - define rv.y <[im].y>
+    - define rv.z <[im].z>
+    - determine <location[<[rv.x]>,<[rv.y]>,<[rv.z]>]>
+
+dmodels_dot_product:
+    type: procedure
+    debug: false
+    definitions: a|b
+    script:
+    - determine <[a].x.mul[<[b].x>].add[<[a].y.mul[<[b].y>]>].add[<[a].z.mul[<[b].z>]>]>
+
+dmodels_cross_product:
+    type: procedure
+    debug: false
+    definitions: a|b
+    script:
+    - determine <[a].with_x[<[a].y.mul[<[b].z>].sub[<[a].z.mul[<[b].y>]>]>].with_y[<[a].z.mul[<[b].x>].sub[<[a].x.mul[<[b].z>]>]>].with_z[<[a].x.mul[<[b].y>].sub[<[a].y.mul[<[b].x>]>]>]>
 
 dmodels_catmullrom_get_t:
     type: procedure
