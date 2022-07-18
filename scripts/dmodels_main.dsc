@@ -122,3 +122,6 @@ dmodels_config:
     # Using a leather based item is recommended to allow for dynamically recoloring items.
     # Leather_Horse_Armor is ideal because other leather armors make noise when equipped.
     item: leather_horse_armor
+    # You can set the resource pack path to a custom path if you want.
+    # Note that the default Denizen config requires this path start under "data/"
+    resource_pack_path: data/dmodels/res_pack

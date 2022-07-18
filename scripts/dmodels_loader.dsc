@@ -10,7 +10,7 @@ dmodels_load_bbmodel:
     definitions: model_name
     script:
     # =============== Prep ===============
-    - define pack_root data/dmodels/res_pack
+    - define pack_root <script[dmodels_config].data_key[resource_pack_path]>
     - define models_root <[pack_root]>/assets/minecraft/models/item/dmodels/<[model_name]>
     - define textures_root <[pack_root]>/assets/minecraft/textures/dmodels/<[model_name]>
     - define item_validate <item[<script[dmodels_config].data_key[item]>]||null>
@@ -40,8 +40,8 @@ dmodels_load_bbmodel:
         - debug error "[DModels] Can't load bbmodel for '<[model_name]>' - file has no elements?"
         - stop
     # =============== Pack validation ===============
-    - if !<server.has_flag[data/dmodels/res_pack/pack.mcmeta]>:
-        - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:data/dmodels/res_pack/pack.mcmeta def.data:<map.with[pack].as[<map[pack_format=8;description=dModels_AutoPack_Default]>].to_json[native_types=true;indent=4].utf8_encode>
+    - if !<server.has_flag[<[pack_root]>/pack.mcmeta]>:
+        - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[pack_root]>/pack.mcmeta def.data:<map.with[pack].as[<map[pack_format=8;description=dModels_AutoPack_Default]>].to_json[native_types=true;indent=4].utf8_encode>
     # =============== Textures loading ===============
     - define tex_id 0
     - foreach <[data.textures]||<list>> as:texture:
