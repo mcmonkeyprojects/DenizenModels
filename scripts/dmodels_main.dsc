@@ -7,10 +7,11 @@
 #
 # @author mcmonkey
 # @contributors Max^
+# @thanks Darwin, Max^, kalebbroo, sharklaserss - for helping with reference models, testing, ideas, etc
 # @date 2022/06/01
-# @updated 2022/07/07
+# @updated 2022/07/18
 # @denizen-build REL-1773
-# @script-version 1.4
+# @script-version 1.5
 #
 # This takes BlockBench "BBModel" files, converts them to a client-ready resource pack and Denizen internal data,
 # then is able to display them in minecraft and even animate them, by spawning and moving invisible armor stands with resource pack items on their heads.
@@ -66,6 +67,11 @@
 #                    Should be called well in advance, when the model is added or changed. Does not need to be re-called until the model is changed again.
 #             Input definitions:
 #                 model_name: The name of the model to load, must correspond to the relevant ".bbmodel" file.
+#             This task should be ~waited for.
+#         dmodels_multi_load
+#             Usage: Loads multiple models simultaneously, and ends the ~wait only after all models are loaded. This is faster than doing individual 'load' calls in a loop and waiting for each.
+#             Input definitions:
+#                 list: A ListTag of valid model names, equivalent to the ones that can be input to 'dmodels_load_bbmodel'
 #             This task should be ~waited for.
 #         dmodels_spawn_model
 #             Usage: Spawns a single instance of a model using real armor stand entities at a location.

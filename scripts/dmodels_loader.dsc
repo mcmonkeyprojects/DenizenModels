@@ -4,11 +4,34 @@
 ###########################
 
 
+dmodels_multi_load:
+    type: task
+    debug: false
+    definitions: list
+    script:
+    - define key <util.random_uuid>
+    - foreach <[list]> as:model:
+        - run dmodels_multiwaitable_load def.key:<[key]> def.model:<[model]>
+    # Ensure all loads are done before ending the task
+    - waituntil rate:1t max:5m <server.flag[dmodels_data.temp_<[key]>.filewrites].is_empty||true>
+    # Cleanup
+    - flag server dmodels_data.temp_<[key]>:!
+
+dmodels_multiwaitable_load:
+    type: task
+    debug: false
+    definitions: key|model
+    script:
+    - flag server dmodels_data.temp_<[key]>.multiload.<[model]>
+    - ~run dmodels_load_bbmodel def.model_name:<[model]>
+    - flag server dmodels_data.temp_<[key]>.multiload.<[model]>:!
+
 dmodels_load_bbmodel:
     type: task
     debug: false
     definitions: model_name
     script:
+    - debug log "[DModels] loading <[model_name].custom_color[emphasis]>"
     # =============== Prep ===============
     - define pack_root <script[dmodels_config].data_key[resource_pack_path]>
     - define models_root <[pack_root]>/assets/minecraft/models/item/dmodels/<[model_name]>
@@ -110,11 +133,17 @@ dmodels_load_bbmodel:
     - if <[animation_list].any||false>:
         - flag server dmodels_data.animations_<[model_name]>:<[animation_list]>
     # =============== Item model file generation ===============
-    - if <util.has_file[<[override_item_filepath]>]>:
+    - waituntil rate:1t max:15s !<server.has_flag[dmodels_temp_item_reading]>
+    - if <server.has_flag[dmodels_temp_item_file]>:
+        - define override_item_data <util.parse_yaml[<server.flag[dmodels_temp_item_file].utf8_decode>]>
+    - else if <util.has_file[<[override_item_filepath]>]>:
+        - flag server dmodels_temp_item_reading expire:1h
         - ~fileread path:<[override_item_filepath]> save:override_item
+        - flag server dmodels_temp_item_reading:!
         - define override_item_data <util.parse_yaml[<entry[override_item].data.utf8_decode>]>
     - else:
         - definemap override_item_data parent:minecraft:item/generated textures:<map[layer0=minecraft:item/<script[dmodels_config].data_key[item]>]>
+    # NOTE: THE BELOW SECTION MUST NOT WAIT! For item override file interlock.
     - define overrides_changed false
     - foreach <server.flag[dmodels_data.temp_<[model_name]>.raw_outlines]> as:outline:
         - define outline_origin <location[<[outline.origin]>]>
@@ -165,7 +194,10 @@ dmodels_load_bbmodel:
         # This sets the actual live usage flag data
         - flag server dmodels_data.model_<[model_name]>.<[outline.uuid]>:<[outline]>
     - if <[overrides_changed]>:
-        - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[override_item_filepath]> def.data:<[override_item_data].to_json[native_types=true;indent=4].utf8_encode>
+        - define override_file_json <[override_item_data].to_json[native_types=true;indent=4].utf8_encode>
+        - flag server dmodels_temp_item_file:<[override_file_json].utf8_encode> expire:1h
+        - waituntil rate:1t max:15s !<server.has_flag[dmodels_data.temp_<[model_name]>.filewrites.<[override_item_filepath].escaped>]>
+        - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[override_item_filepath]> def.data:<[override_file_json]>
     # Ensure all filewrites are done before ending the task
     - waituntil rate:1t max:5m <server.flag[dmodels_data.temp_<[model_name]>.filewrites].is_empty||true>
     # Final clear of temp data
