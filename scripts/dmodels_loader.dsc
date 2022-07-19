@@ -13,7 +13,7 @@ dmodels_multi_load:
     - foreach <[list]> as:model:
         - run dmodels_multiwaitable_load def.key:<[key]> def.model:<[model]>
     # Ensure all loads are done before ending the task
-    - waituntil rate:1t max:5m <server.flag[dmodels_data.temp_<[key]>.filewrites].is_empty||true>
+    - waituntil rate:1t max:5m <server.flag[dmodels_data.temp_<[key]>.multiload].is_empty||true>
     # Cleanup
     - flag server dmodels_data.temp_<[key]>:!
 
@@ -195,7 +195,7 @@ dmodels_load_bbmodel:
         - flag server dmodels_data.model_<[model_name]>.<[outline.uuid]>:<[outline]>
     - if <[overrides_changed]>:
         - define override_file_json <[override_item_data].to_json[native_types=true;indent=4].utf8_encode>
-        - flag server dmodels_temp_item_file:<[override_file_json].utf8_encode> expire:1h
+        - flag server dmodels_temp_item_file:<[override_file_json]> expire:1h
         - waituntil rate:1t max:15s !<server.has_flag[dmodels_data.temp_<[model_name]>.filewrites.<[override_item_filepath].escaped>]>
         - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[override_item_filepath]> def.data:<[override_file_json]>
     # Ensure all filewrites are done before ending the task

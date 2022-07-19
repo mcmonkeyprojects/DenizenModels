@@ -39,6 +39,18 @@
 # 5: Spawn your model and control it using the Denizen scripting API documented below
 #
 # #########
+# Commands:
+#   /[Command]                     - [Permission]           - [Description]
+#   /dmodels                       - "dmodels.help"         - Root command entry
+#   /dmodels help                  - "dmodels.help"         - Shows help information about the dModels command
+#   /dmodels load [path]           - "dmodels.load"         - Loads a single model based on model file name input
+#   /dmodels loadall               - "dmodels.loadall"      - Loads all models in the models folder
+#   /dmodels spawn                 - "dmodels.spawn"        - Spawns a static instance of a model at your location
+#   /dmodels remove                - "dmodels.remove"       - Removes whichever real-spawned model is closest to your location
+#   /dmodels animate [animation]   - "dmodels.animate"      - Causes your nearest real-spawned model to play the specified animation
+#   /dmodels stopanimate           - "dmodels.stopanimate"  - Causes your nearest real-spawned model to stop animating
+#
+# #########
 #
 # API usage examples:
 # # First load a model (in advance, not every time - you can use '/ex' to do this once after adding or modifying the .bbmodel file)
