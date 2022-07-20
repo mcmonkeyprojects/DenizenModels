@@ -14,7 +14,7 @@ dmodels_command:
     type: command
     debug: false
     name: dmodels
-    usage: /dmodels [load/loadall/spawn/remove/animate/stopanimate]
+    usage: /dmodels [load/loadall/spawn/remove/animate/stopanimate/npcmodel]
     description: Manages Denizen Models.
     permission: dmodels.help
     tab completions:
@@ -116,6 +116,38 @@ dmodels_command:
                 - stop
             - run dmodels_end_animation def.root_entity:<[target]>
             - narrate "<&[base]>Animation stopped."
+        - case npcmodel:
+            - if !<player.has_permission[dmodels.npcmodel]>:
+                - narrate "<&[error]>You do not have permission for that."
+                - stop
+            - if !<player.selected_npc.exists>:
+                - narrate "<&[error]>You do not have any NPC selected."
+                - stop
+            - adjust <queue> linked_npc:<player.selected_npc>
+            - if !<context.args.get[2].exists>:
+                - narrate "<&[warning]>/dmodels npcmodel [model] <&[error]>- sets an NPC to render as a given model (must be loaded). Use 'none' to remove the model."
+                - stop
+            - define model <context.args.get[2]>
+            - if !<[model].to_lowercase.matches_character_set[<script[dmodels_cmd_data].data_key[valid_chars]>]>:
+                - narrate "<&[error]>Given model name has an invalid format."
+                - stop
+            - if <[model]> == none:
+                - flag <npc> dmodels_model:!
+                - if <npc.scripts.parse[name].contains[dmodels_npc_assignment]||false>:
+                    - run dmodels_npc_despawn
+                    - assignment remove script:dmodels_npc_assignment
+                - narrate "<&[base]>NPC <npc.id.custom_color[emphasis]> (<npc.name><&[base]>) will now render as a normal NPC."
+                - stop
+            - if !<server.has_flag[dmodels_data.model_<[model]>]>:
+                - narrate "<&[error]>No such model exists, or that model has never been loaded."
+                - stop
+            - flag <npc> dmodels_model:<[model]>
+            - if !<npc.scripts.parse[name].contains[dmodels_npc_assignment]||false>:
+                - assignment add script:dmodels_npc_assignment
+            - else:
+                - run dmodels_npc_despawn
+                - run dmodels_npc_spawn
+            - narrate "<&[base]>NPC <npc.id.custom_color[emphasis]> (<npc.name><&[base]>) will now render as model <[model].custom_color[emphasis]>"
         # help
         - default:
             - if <player.has_permission[dmodels.load]||true>:
@@ -130,6 +162,8 @@ dmodels_command:
                 - narrate "<&[warning]>/dmodels animate [animation] <&[error]>- causes the closest real-spawned model to start playing the given animation"
             - if <player.has_permission[dmodels.stopanimate]||true>:
                 - narrate "<&[warning]>/dmodels stopanimate <&[error]>- causes the closest real-spawned model to stop animating"
+            - if <player.has_permission[dmodels.npcmodel]||true>:
+                - narrate "<&[warning]>/dmodels npcmodel [model] <&[error]>- sets an NPC to render as a given model (must be loaded). Use 'none' to remove the model."
             - narrate "<&[warning]>/dmodels help <&[error]>- this help output"
 
 dmodels_get_target:
@@ -146,7 +180,7 @@ dmodels_tab_1:
     debug: false
     script:
     - define list <list>
-    - foreach load|loadall|spawn|remove|animate|stopanimate|help as:key:
+    - foreach load|loadall|spawn|remove|animate|stopanimate|npcmodel|help as:key:
         - if <player.has_permission[<[key]>]||true>:
             - define list:->:<[key]>
     - determine <[list]>
@@ -167,6 +201,8 @@ dmodels_tab_2:
         - determine <util.list_files[data/dmodels/<[path]>].parse[before_last[.bbmodel]]||<list>>
     - else if <[args].first> == spawn && <player.has_permission[dmodels.spawn]||true>:
         - determine <server.flag[dmodels_data].keys.filter[starts_with[model_]].parse[after[model_]]>
+    - else if <[args].first> == npcmodel && <player.has_permission[dmodels.npcmodel]||true>:
+        - determine <server.flag[dmodels_data].keys.filter[starts_with[model_]].parse[after[model_]].include[none]>
     - else if <[args].first> == animate && <player.has_permission[dmodels.animate]||true>:
         - define target <player.location.find_entities[dmodel_part_stand].within[10].filter[has_flag[dmodel_model_id]].first||null>
         - if !<[target].is_truthy>:

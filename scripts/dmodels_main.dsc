@@ -49,6 +49,7 @@
 #   /dmodels remove                - "dmodels.remove"       - Removes whichever real-spawned model is closest to your location
 #   /dmodels animate [animation]   - "dmodels.animate"      - Causes your nearest real-spawned model to play the specified animation
 #   /dmodels stopanimate           - "dmodels.stopanimate"  - Causes your nearest real-spawned model to stop animating
+#   /dmodels npcmodel [model]      - "dmodels.npcmodel"     - sets an NPC to render as a given model (must be loaded). Use 'none' to remove the model.
 #
 # #########
 #
