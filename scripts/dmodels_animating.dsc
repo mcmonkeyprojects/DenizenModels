@@ -9,6 +9,9 @@ dmodels_end_animation:
     debug: false
     definitions: root_entity
     script:
+    - if !<[root_entity].is_truthy> || !<[root_entity].has_flag[dmodel_model_id]||false>:
+        - debug error "[DModels] invalid end_animation root_entity <[root_entity]>"
+        - stop
     - flag <[root_entity]> dmodels_animation_id:!
     - flag <[root_entity]> dmodels_anim_time:0
     - flag server dmodels_anim_active.<[root_entity].uuid>:!
@@ -19,6 +22,9 @@ dmodels_animate:
     debug: false
     definitions: root_entity|animation
     script:
+    - if !<[root_entity].is_truthy> || !<[root_entity].has_flag[dmodel_model_id]||false>:
+        - debug error "[DModels] invalid animate root_entity <[root_entity]>"
+        - stop
     - run dmodels_reset_model_position def.root_entity:<[root_entity]>
     - define animation_data <server.flag[dmodels_data.animations_<[root_entity].flag[dmodel_model_id]>.<[animation]>]||null>
     - if <[animation_data]> == null:

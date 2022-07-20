@@ -75,6 +75,11 @@ dmodels_delete:
     debug: false
     definitions: root_entity
     script:
+    - if !<[root_entity].is_truthy> || !<[root_entity].has_flag[dmodel_model_id]||false>:
+        - debug error "[DModels] invalid delete root_entity <[root_entity]>"
+        - stop
+    - flag server dmodels_anim_active.<[root_entity].uuid>:!
+    - flag server dmodels_attached.<[root_entity].uuid>:!
     - remove <[root_entity].flag[dmodel_parts]>
     - remove <[root_entity]>
 

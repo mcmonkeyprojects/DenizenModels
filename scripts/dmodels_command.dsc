@@ -80,7 +80,7 @@ dmodels_command:
             - if !<[spawned].is_truthy>:
                 - narrate "<&[error]>Spawning failed?"
                 - stop
-            - flag player spawned_model_<[model]>:<[spawned]>
+            - flag player spawned_dmodel_<[model]>:<[spawned]>
             - narrate "<&[base]>Spawned model <[model].custom_color[emphasis]> with root entity <[spawned].uuid.custom_color[emphasis]>, stored to player flag '<&[emphasis]>spawned_dmodel_<[model]><&[base]>'"
         - case remove:
             - if !<player.has_permission[dmodels.remove]>:
