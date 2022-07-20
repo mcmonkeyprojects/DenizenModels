@@ -162,11 +162,31 @@ dmodels_catmullrom_proc:
     # FVector C  = ( t2-t )/( t2-t1 )*B1 + ( t-t1 )/( t2-t1 )*B2;
     - determine <[b1].mul[<[t2].sub[<[t]>].div[<[t2].sub[<[t1]>]>]>].add[<[b2].mul[<[t].sub[<[t1]>].div[<[t2].sub[<[t1]>]>]>]>]>
 
+dmodels_attach_to:
+    type: task
+    debug: false
+    definitions: root_entity|target
+    script:
+    - if !<[root_entity].is_truthy> || !<[root_entity].has_flag[dmodel_model_id]||false>:
+        - debug error "[DModels] invalid attach_to root_entity <[root_entity]>"
+        - stop
+    - if !<[target].is_truthy> || <[target]> !matches entity:
+        - debug error "[DModels] invalid attach_to target <[target]>"
+        - stop
+    - flag <[root_entity]> dmodels_attached_to:<[target]>
+    - flag server dmodels_attached.<[root_entity].uuid>:<[root_entity]>
+
 dmodels_animator_world:
     type: world
     debug: false
     events:
-        on tick server_flagged:dmodels_anim_active:
+        on tick server_flagged:dmodels_attached priority:-20:
+        - foreach <server.flag[dmodels_attached]> as:root:
+            - if <[root].is_spawned||false> && <[root].flag[dmodels_attached_to].is_spawned||false>:
+                - teleport <[root]> <[root].flag[dmodels_attached_to].location>
+                - if !<[root].has_flag[dmodels_animation_id]>:
+                    - run dmodels_reset_model_position def.root_entity:<[root]>
+        on tick server_flagged:dmodels_anim_active priority:-10:
         - foreach <server.flag[dmodels_anim_active]> as:root:
             - if <[root].is_spawned||false>:
                 - run dmodels_move_to_frame def.root_entity:<[root]> def.animation:<[root].flag[dmodels_animation_id]> def.timespot:<[root].flag[dmodels_anim_time].div[20]> def.delay_pose:true

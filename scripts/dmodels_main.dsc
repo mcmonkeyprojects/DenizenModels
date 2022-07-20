@@ -117,6 +117,11 @@
 #                 animation: The name of the animation to play (as set in BlockBench).
 #                 timespot: The time (in seconds) from the start of the animation to select as the frame.
 #                 delay_pose: 'true' if playing fluidly to offset the pose application over time, 'false' to snap exactly to frame position.
+#         dmodels_attach_to
+#             Usage: Attaches a model's position/rotation to an entity.
+#             Input definitions:
+#                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
+#                 target: The entity to be attached to.
 #     Flags:
 #         Every entity spawned by DModels has the flag 'dmodel_root', that refers up to the root entity.
 #         The root entity has the following flags:
