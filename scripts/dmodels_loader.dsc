@@ -86,6 +86,8 @@ dmodels_load_bbmodel:
     - foreach <[data.elements]> as:element:
         - if <[element.type]||cube> != cube:
             - foreach next
+        - if !<[element.faces.north.texture].exists>:
+            - foreach next
         - define element.origin <[element.origin].separated_by[,]||0,0,0>
         - define element.rotation <[element.rotation].separated_by[,]||0,0,0>
         - define flagname dmodels_data.model_<[model_name]>.namecounter_element.<[element.name]>
