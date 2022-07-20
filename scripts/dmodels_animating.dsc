@@ -171,7 +171,7 @@ dmodels_catmullrom_proc:
 dmodels_attach_to:
     type: task
     debug: false
-    definitions: root_entity|target
+    definitions: root_entity|target|auto_animate
     script:
     - if !<[root_entity].is_truthy> || !<[root_entity].has_flag[dmodel_model_id]||false>:
         - debug error "[DModels] invalid attach_to root_entity <[root_entity]>"
@@ -180,6 +180,7 @@ dmodels_attach_to:
         - debug error "[DModels] invalid attach_to target <[target]>"
         - stop
     - flag <[root_entity]> dmodels_attached_to:<[target]>
+    - flag <[root_entity]> dmodels_attach_auto_animate:<[auto_animate]||false>
     - flag server dmodels_attached.<[root_entity].uuid>:<[root_entity]>
 
 dmodels_animator_world:
@@ -189,7 +190,20 @@ dmodels_animator_world:
         on tick server_flagged:dmodels_attached priority:-20:
         - foreach <server.flag[dmodels_attached]> as:root:
             - if <[root].is_spawned||false> && <[root].flag[dmodels_attached_to].is_spawned||false>:
-                - teleport <[root]> <[root].flag[dmodels_attached_to].location>
+                - define target <[root].flag[dmodels_attached_to]>
+                - teleport <[root]> <[target].location>
+                - if <[root].flag[dmodels_attach_auto_animate]> && !<[root].flag[dmodels_temp_alt_anim].is_truthy||false>:
+                    - define preferred idle
+                    - if <[target].is_sneaking||false>:
+                        - define preferred crouching_idle
+                    - if <[target].velocity.vector_length> > 0.1:
+                        - define preferred running
+                        - if <[target].velocity.vector_length> > 1.2:
+                            - define preferred sprinting
+                        - if <[target].velocity.y> > 0.1:
+                            - define preferred jump
+                    - if <[root].flag[dmodels_animation_id]||none> != <[preferred]> && <server.has_flag[dmodels_data.animations_<[root].flag[dmodel_model_id]>.<[preferred]>]||null>:
+                        - run dmodels_animate def.root_entity:<[root]> def.animation:<[preferred]>
                 - if !<[root].has_flag[dmodels_animation_id]>:
                     - run dmodels_reset_model_position def.root_entity:<[root]>
         on tick server_flagged:dmodels_anim_active priority:-10:

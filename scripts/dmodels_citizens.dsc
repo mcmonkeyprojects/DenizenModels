@@ -32,7 +32,7 @@ dmodels_npc_spawn:
         - stop
     - adjust <npc> hide_from_players
     - flag <npc> dmodels_root:<[root]>
-    - run dmodels_attach_to def.root_entity:<[root]> def.target:<npc>
+    - run dmodels_attach_to def.root_entity:<[root]> def.target:<npc> def.auto_animate:true
 
 dmodels_npc_despawn:
     type: task

@@ -19,6 +19,7 @@
 # Installation:
 # 1: Edit your "plugins/Denizen/config.yml", find "File:", and "Allow read" and "Allow write" inside, and set them both to "true", then use "/denizen reload config"
 # 2: Copy the "scripts/dmodels" folder to your "plugins/Denizen/scripts" and "/ex reload"
+# 2.5: NOTE: If you do not use the plugin Citizens, you can exclude the "dmodels_citizens" file.
 # 3: Note that you must know the basics of operating resource packs - the pack content will be generated for you, but you must know how to install a pack on your client and/or distribute it to players as appropriate
 # 4: Take a look at the config settings in the bottom of this file in case you want to change any of them.
 #
@@ -123,6 +124,7 @@
 #             Input definitions:
 #                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
 #                 target: The entity to be attached to.
+#                 auto_animate: (OPTIONAL) set to 'true' to indicate the model should automatically apply animations based on the entity it's attached to. See 'core animations' list below.
 #     Flags:
 #         Every entity spawned by DModels has the flag 'dmodel_root', that refers up to the root entity.
 #         The root entity has the following flags:
@@ -131,7 +133,21 @@
 #             'dmodel_anim_part.<ID_HERE>': a mapping of outline IDs to the part entity spawned for them.
 #             'dmodels_animation_id': only if the model is animating automatically, contains the animation ID.
 #             'dmodels_anim_time': only if the model is animating automatically, contains the progress through the current animation as a number representing time.
+#             'dmodels_attached_to': the entity this model is attached to, if any.
+#             'dmodels_temp_alt_anim': if set to a truthy value, will tell the model to not play any auto-animations (so other scripts can indicate they need to override the default)
 #        Additional flags are present on both the root and on parts, but are not considered API - use at your own risk.
+#
+# #########
+#
+# Core Animations:
+# Some systems within DModels look for certain core animations to exist, and will use them when relevant.
+# For example, the with the 'dmodels_attach_to' task, with the 'auto_animate' flag enabled (or the 'npcmodel' command which enables it by default), will apply animations to match the attached entity.
+# List:
+#     'idle': default/no activity idle animation.
+#     'crouching_idle': default/no activity idle animation, while crouching (sneaking).
+#     'running': the animation for moving at normal speed.
+#     'sprinting': the animation for moving very fast.
+#     'jump': the animation for jumping in place.
 #
 ################################################
 
