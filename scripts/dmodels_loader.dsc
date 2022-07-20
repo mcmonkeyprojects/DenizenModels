@@ -100,7 +100,7 @@ dmodels_load_bbmodel:
     - foreach <[data.outliner]||<list>> as:outliner:
         - if <[outliner].matches_character_set[abcdef0123456789-]>:
             - if <[root_outline]> == null:
-                - definemap root_outline name:__root__ origin:0,0,0 rotation:0,0,0 uuid:<util.random_uuid>
+                - definemap root_outline name:__root__ origin:0,0,0 rotation:0,0,0 uuid:genroot_<util.random_uuid> parent:none
                 - flag server dmodels_data.temp_<[model_name]>.raw_outlines.<[root_outline.uuid]>:<[root_outline]>
             - run dmodels_loader_addchild def.model_name:<[model_name]> def.parent:<[root_outline]> def.child:<[outliner]>
         - else:
