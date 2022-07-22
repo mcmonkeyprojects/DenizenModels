@@ -126,9 +126,9 @@ dmodels_load_bbmodel:
                     - definemap anim_map channel:<[keyframe.channel]> time:<[keyframe.time]> interpolation:<[keyframe.interpolation]>
                     - define data_points <[keyframe.data_points].first>
                     - if <[anim_map.channel]> == rotation:
-                        - define anim_map.data <[data_points.x].to_radians>,<[data_points.y].to_radians>,<[data_points.z].to_radians>
+                        - define anim_map.data <[data_points.x].trim.to_radians>,<[data_points.y].trim.to_radians>,<[data_points.z].trim.to_radians>
                     - else:
-                        - define anim_map.data <[data_points.x]>,<[data_points.y]>,<[data_points.z]>
+                        - define anim_map.data <[data_points.x].trim>,<[data_points.y].trim>,<[data_points.z].trim>
                     - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames:->:<[anim_map]>
                 # Sort frames by time (why is this not done by default? BlockBench is weird)
                 - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames <[animation_list.<[animation.name]>.animators.<[o_uuid]>.frames].sort_by_value[get[time]]>
