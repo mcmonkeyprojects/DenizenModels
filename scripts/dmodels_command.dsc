@@ -103,7 +103,7 @@ dmodels_command:
                 - stop
             - inject dmodels_get_target
             - if !<server.has_flag[dmodels_data.animations_<[target].flag[dmodel_model_id]>.<[animation]>]||null>:
-                - narrate "<&[error]>Unknown animation name given. Available animations: <&[emphasis]><server.flag[dmodels_data.animations_<[target].flag[dmodel_model_id]>].keys.formatted>"
+                - narrate "<&[error]>Unknown animation name given. Available animations: <&[emphasis]><server.flag[dmodels_data.animations_<[target].flag[dmodel_model_id]>].keys.formatted||None>"
             - run dmodels_animate def.root_entity:<[target]> def.animation:<[animation]>
             - narrate "<&[base]>Model <[target].flag[dmodel_model_id].custom_color[emphasis]> is now playing animation <[animation].custom_color[emphasis]>"
         - case stopanimate:
@@ -207,7 +207,7 @@ dmodels_tab_2:
         - define target <player.location.find_entities[dmodel_part_stand].within[10].filter[has_flag[dmodel_model_id]].first||null>
         - if !<[target].is_truthy>:
             - determine <list>
-        - determine <server.flag[dmodels_data.animations_<[target].flag[dmodel_model_id]>].keys>
+        - determine <server.flag[dmodels_data.animations_<[target].flag[dmodel_model_id]>].keys||<list>>
     - determine <list>
 
 dmodels_gather_folder:
