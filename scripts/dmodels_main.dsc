@@ -9,7 +9,7 @@
 # @contributors Max^
 # @thanks Darwin, Max^, kalebbroo, sharklaserss - for helping with reference models, testing, ideas, etc
 # @date 2022/06/01
-# @updated 2022/07/20
+# @updated 2022/07/25
 # @denizen-build REL-1773
 # @script-version 1.5
 #
@@ -46,6 +46,10 @@
 #   /dmodels help                  - "dmodels.help"         - Shows help information about the dModels command
 #   /dmodels load [path]           - "dmodels.load"         - Loads a single model based on model file name input
 #   /dmodels loadall               - "dmodels.loadall"      - Loads all models in the models folder
+#   /dmodels unload [model]        - "dmodels.unload"       - Unloads a single model from memory based on model name input.
+######                                                      - This will not properly remove any spawned instances of that model, which may now be glitched as a result.
+######                                                      - This also does not remove any data from the resource pack currently.
+#   /dmodels unloadall             - "dmodels.unloadall"    - Unloads any/all DModels data from memory
 #   /dmodels spawn [model]         - "dmodels.spawn"        - Spawns a static instance of a model at your location
 #   /dmodels remove                - "dmodels.remove"       - Removes whichever real-spawned model is closest to your location
 #   /dmodels animate [animation]   - "dmodels.animate"      - Causes your nearest real-spawned model to play the specified animation

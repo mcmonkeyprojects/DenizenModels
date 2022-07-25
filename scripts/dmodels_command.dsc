@@ -14,7 +14,7 @@ dmodels_command:
     type: command
     debug: false
     name: dmodels
-    usage: /dmodels [load/loadall/spawn/remove/animate/stopanimate/npcmodel]
+    usage: /dmodels [load/loadall/spawn/remove/animate/stopanimate/npcmodel/unload/unloadall]
     description: Manages Denizen Models.
     permission: dmodels.help
     tab completions:
@@ -61,6 +61,29 @@ dmodels_command:
             - debug log "[DModels] <&[emphasis]><player.name||server> <&[base]>is loading <[files].size.custom_color[emphasis]> model files: <[files].formatted.custom_color[emphasis]>"
             - ~run dmodels_multi_load def.list:<[files]>
             - narrate <&[base]>Done!
+        - case unload:
+            - if !<player.has_permission[dmodels.unload]>:
+                - narrate "<&[error]>You do not have permission for that."
+                - stop
+            - if !<context.args.get[2].exists>:
+                - narrate "<&[warning]>/dmodels unload [model] <&[error]>- unloads a model's data from memory."
+                - stop
+            - define model <context.args.get[2]>
+            - if !<[model].to_lowercase.matches_character_set[<script[dmodels_cmd_data].data_key[valid_chars]>]>:
+                - narrate "<&[error]>Given model name has an invalid format."
+                - stop
+            - if !<server.has_flag[dmodels_data.model_<[model]>]>:
+                - narrate "<&[error]>No such model exists, or that model has never been loaded."
+                - stop
+            - flag server dmodels_data.model_<[model]>:!
+            - flag server dmodels_data.animations_<[model]>:!
+            - narrate "<&[base]>Removed model <[model].custom_color[emphasis]> from memory."
+        - case unloadall:
+            - if !<player.has_permission[dmodels.unloadall]>:
+                - narrate "<&[error]>You do not have permission for that."
+                - stop
+            - flag server dmodels_data:!
+            - narrate "<&[base]>Removed all DModels data from meory."
         - case spawn:
             - if !<player.has_permission[dmodels.spawn]>:
                 - narrate "<&[error]>You do not have permission for that."
@@ -154,6 +177,10 @@ dmodels_command:
                 - narrate "<&[warning]>/dmodels load [path] <&[error]>- loads a model from file based on filename"
             - if <player.has_permission[dmodels.loadall]||true>:
                 - narrate "<&[warning]>/dmodels loadall <&[error]>- loads all models in the source folder"
+            - if <player.has_permission[dmodels.unload]||true>:
+                - narrate "<&[warning]>/dmodels unload [model] <&[error]>- unloads a specific model from memory"
+            - if <player.has_permission[dmodels.unloadall]||true>:
+                - narrate "<&[warning]>/dmodels unloadall <&[error]>- unloads all DModels data from memory"
             - if <player.has_permission[dmodels.spawn]||true>:
                 - narrate "<&[warning]>/dmodels spawn [model] <&[error]>- spawns a model at your position (must be loaded)"
             - if <player.has_permission[dmodels.remove]||true>:
@@ -180,8 +207,8 @@ dmodels_tab_1:
     debug: false
     script:
     - define list <list>
-    - foreach load|loadall|spawn|remove|animate|stopanimate|npcmodel|help as:key:
-        - if <player.has_permission[<[key]>]||true>:
+    - foreach load|loadall|spawn|remove|animate|stopanimate|npcmodel|help|unload|unloadall as:key:
+        - if <player.has_permission[dmodels.<[key]>]||true>:
             - define list:->:<[key]>
     - determine <[list]>
 
