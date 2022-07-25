@@ -23,11 +23,14 @@ dmodels_command:
     data:
         load_example: <&[error]>'path' should be a valid file name, for example if you have <&[emphasis]>data/dmodels/example.bbmodel<&[error]>, you should do: <&[warning]>/dmodels load example
     script:
-    - choose <context.args.first||help>:
+    - define arg1 <context.args.first||help>
+    - if !<[arg1].matches_character_set[<script[dmodels_cmd_data].data_key[valid_chars]>]>:
+        - define arg1 help
+    - if !<player.has_permission[dmodels.<[arg1]>]>:
+        - narrate "<&[error]>You do not have permission for that."
+        - stop
+    - choose <[arg1]>:
         - case load:
-            - if !<player.has_permission[dmodels.load]>:
-                - narrate "<&[error]>You do not have permission for that."
-                - stop
             - if !<context.args.get[2].exists>:
                 - narrate "<&[warning]>/dmodels load [path] <&[error]>- loads a model from file based on filename"
                 - narrate <script.parsed_key[load_example]>
@@ -52,9 +55,6 @@ dmodels_command:
             - else:
                 - narrate "<&[error]>Unable to load that model."
         - case loadall:
-            - if !<player.has_permission[dmodels.loadall]>:
-                - narrate "<&[error]>You do not have permission for that."
-                - stop
             - ~run dmodels_gather_folder def.folder:data/dmodels save:list
             - define files <entry[list].created_queue.determination.first>
             - narrate "<&[base]>Loading <[files].size.custom_color[emphasis]> files..."
@@ -62,9 +62,6 @@ dmodels_command:
             - ~run dmodels_multi_load def.list:<[files]>
             - narrate <&[base]>Done!
         - case unload:
-            - if !<player.has_permission[dmodels.unload]>:
-                - narrate "<&[error]>You do not have permission for that."
-                - stop
             - if !<context.args.get[2].exists>:
                 - narrate "<&[warning]>/dmodels unload [model] <&[error]>- unloads a model's data from memory."
                 - stop
@@ -79,15 +76,9 @@ dmodels_command:
             - flag server dmodels_data.animations_<[model]>:!
             - narrate "<&[base]>Removed model <[model].custom_color[emphasis]> from memory."
         - case unloadall:
-            - if !<player.has_permission[dmodels.unloadall]>:
-                - narrate "<&[error]>You do not have permission for that."
-                - stop
             - flag server dmodels_data:!
             - narrate "<&[base]>Removed all DModels data from meory."
         - case spawn:
-            - if !<player.has_permission[dmodels.spawn]>:
-                - narrate "<&[error]>You do not have permission for that."
-                - stop
             - if !<context.args.get[2].exists>:
                 - narrate "<&[warning]>/dmodels spawn [model] <&[error]>- spawns a model at your position (must be loaded)"
                 - stop
@@ -106,17 +97,11 @@ dmodels_command:
             - flag player spawned_dmodel_<[model]>:<[spawned]>
             - narrate "<&[base]>Spawned model <[model].custom_color[emphasis]> with root entity <[spawned].uuid.custom_color[emphasis]>, stored to player flag '<&[emphasis]>spawned_dmodel_<[model]><&[base]>'"
         - case remove:
-            - if !<player.has_permission[dmodels.remove]>:
-                - narrate "<&[error]>You do not have permission for that."
-                - stop
             - inject dmodels_get_target
             - define model <[target].flag[dmodel_model_id]>
             - run dmodels_delete def.root_entity:<[target]>
             - narrate "<&[base]>Removed a spawned copy of model <[model].custom_color[emphasis]>."
         - case animate:
-            - if !<player.has_permission[dmodels.animate]>:
-                - narrate "<&[error]>You do not have permission for that."
-                - stop
             - if !<context.args.get[2].exists>:
                 - narrate "<&[warning]>/dmodels animate [animation] <&[error]>- causes the closest real-spawned model to start playing the given animation"
                 - stop
@@ -130,9 +115,6 @@ dmodels_command:
             - run dmodels_animate def.root_entity:<[target]> def.animation:<[animation]>
             - narrate "<&[base]>Model <[target].flag[dmodel_model_id].custom_color[emphasis]> is now playing animation <[animation].custom_color[emphasis]>"
         - case stopanimate:
-            - if !<player.has_permission[dmodels.stopanimate]>:
-                - narrate "<&[error]>You do not have permission for that."
-                - stop
             - inject dmodels_get_target
             - if !<[target].has_flag[dmodels_animation_id]>:
                 - narrate "<&[base]>Your nearest model is not animating currently."
@@ -140,9 +122,6 @@ dmodels_command:
             - run dmodels_end_animation def.root_entity:<[target]>
             - narrate "<&[base]>Animation stopped."
         - case npcmodel:
-            - if !<player.has_permission[dmodels.npcmodel]>:
-                - narrate "<&[error]>You do not have permission for that."
-                - stop
             - if !<player.selected_npc.exists>:
                 - narrate "<&[error]>You do not have any NPC selected."
                 - stop
@@ -217,7 +196,9 @@ dmodels_tab_2:
     debug: false
     definitions: args
     script:
-    - if <[args].first> == load && <player.has_permission[dmodels.load]||true>:
+    - if !<[args].first.matches_character_set[<script[dmodels_cmd_data].data_key[valid_chars]>]> || !<player.has_permission[dmodels.<[args].first>]||true>:
+        - determine <list>
+    - if <[args].first> == load:
         - define path <[args].get[2]||>
         - if !<[path].to_lowercase.matches_character_set[<script[dmodels_cmd_data].data_key[valid_chars]>]>:
             - determine <list>
@@ -226,11 +207,13 @@ dmodels_tab_2:
         - else:
             - define path <empty>
         - determine <util.list_files[data/dmodels/<[path]>].parse[before_last[.bbmodel]]||<list>>
-    - else if <[args].first> == spawn && <player.has_permission[dmodels.spawn]||true>:
+    - if !<server.has_flag[dmodels_data]>:
+        - determine <list>
+    - if <[args].first> in spawn|unload:
         - determine <server.flag[dmodels_data].keys.filter[starts_with[model_]].parse[after[model_]]>
-    - else if <[args].first> == npcmodel && <player.has_permission[dmodels.npcmodel]||true>:
+    - else if <[args].first> == npcmodel:
         - determine <server.flag[dmodels_data].keys.filter[starts_with[model_]].parse[after[model_]].include[none]>
-    - else if <[args].first> == animate && <player.has_permission[dmodels.animate]||true>:
+    - else if <[args].first> == animate:
         - define target <player.location.find_entities[dmodel_part_stand].within[10].filter[has_flag[dmodel_model_id]].first||null>
         - if !<[target].is_truthy>:
             - determine <list>
