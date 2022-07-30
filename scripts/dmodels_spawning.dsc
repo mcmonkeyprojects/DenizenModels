@@ -56,7 +56,7 @@ dmodels_spawn_model:
         - define to_spawn_ent dmodel_part_stand[equipment=[helmet=<[part.item]>];armor_pose=[head=<[new_rot].xyz>]]
         - define to_spawn_loc <[center].add[<[new_pos].div[16].rotate_around_y[<[yaw_mod].mul[-1]>]>]>
         - if <[fake_to].exists>:
-            - fakespawn <[to_spawn_ent]> <[to_spawn_loc]> save:spawned d:infinite
+            - fakespawn <[to_spawn_ent]> <[to_spawn_loc]> players:<[fake_to]> save:spawned d:infinite
             - define spawned <entry[spawned].faked_entity>
         - else:
             - spawn <[to_spawn_ent]> <[to_spawn_loc]> save:spawned
