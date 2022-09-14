@@ -26,7 +26,7 @@ dmodels_spawn_model:
     - define center <[location].with_pitch[0].below[0.72]>
     - define yaw_mod <[location].yaw.add[180].to_radians>
     - if <[fake_to].exists>:
-        - fakespawn dmodel_part_stand <[location]> save:root d:infinite
+        - fakespawn dmodel_part_stand <[location]> players:<[fake_to]> save:root d:infinite
         - define root <entry[root].faked_entity>
     - else:
         - spawn dmodel_part_stand <[location]> save:root
