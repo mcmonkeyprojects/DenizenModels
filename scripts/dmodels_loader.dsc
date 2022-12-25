@@ -125,7 +125,7 @@ dmodels_load_bbmodel:
         - define animation_list.<[animation.name]>.anim_time_update <[animation.anim_time_update]>
         - define animation_list.<[animation.name]>.blend_weight <[animation.blend_weight]>
         - define animation_list.<[animation.name]>.length <[animation.length]>
-        - define animator_data <[animation.animators]>
+        - define animator_data <[animation.animators]||<map>>
         - foreach <server.flag[dmodels_data.temp_<[model_name]>.raw_outlines]> key:o_uuid as:outline_data:
             - define animator <[animator_data.<[o_uuid]>]||null>
             - if <[animator]> == null:
