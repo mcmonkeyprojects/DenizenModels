@@ -64,9 +64,14 @@ dmodels_load_bbmodel:
         - stop
     # =============== Pack validation ===============
     - define packversion 12
-    - if !<util.has_file[<[pack_root]>/pack.mcmeta]> || <server.flag[dmodels_last_pack_version]||0> != packversion:
-        - flag server dmodels_last_pack_version:<[packversion]>
-        - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[pack_root]>/pack.mcmeta def.data:<map.with[pack].as[<map[pack_format=<[packversion]>;description=dModels_AutoPack_Default]>].to_json[native_types=true;indent=4].utf8_encode>
+    - if !<util.has_file[<[pack_root]>/pack.mcmeta]>:
+        - run dmodels_multiwaitable_filewrite def.key:core def.path:<[pack_root]>/pack.mcmeta def.data:<map.with[pack].as[<map[pack_format=<[packversion]>;description=dModels_AutoPack_Default]>].to_json[native_types=true;indent=4].utf8_encode>
+    - else if <server.flag[dmodels_last_pack_version]||0> != packversion:
+        - ~fileread path:<[pack_root]>/pack.mcmeta save:mcmeta
+        - define mcmeta_data <util.parse_yaml[<entry[mcmeta].data.utf8_decode>]>
+        - define mcmeta_data.pack.pack_format <[packversion]>
+        - run dmodels_multiwaitable_filewrite def.key:core def.path:<[pack_root]>/pack.mcmeta def.data:<[mcmeta_data].to_json[native_types=true;indent=4].utf8_encode>
+    - flag server dmodels_last_pack_version:<[packversion]>
     # =============== Textures loading ===============
     - define tex_id 0
     - define texture_paths <list>
