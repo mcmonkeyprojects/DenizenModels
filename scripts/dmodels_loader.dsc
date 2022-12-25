@@ -63,10 +63,13 @@ dmodels_load_bbmodel:
         - debug error "[DModels] Can't load bbmodel for '<[model_name]>' - file has no elements?"
         - stop
     # =============== Pack validation ===============
-    - if !<server.has_flag[<[pack_root]>/pack.mcmeta]>:
-        - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[pack_root]>/pack.mcmeta def.data:<map.with[pack].as[<map[pack_format=8;description=dModels_AutoPack_Default]>].to_json[native_types=true;indent=4].utf8_encode>
+    - define packversion 12
+    - if !<util.has_file[<[pack_root]>/pack.mcmeta]> || <server.flag[dmodels_last_pack_version]||0> != packversion:
+        - flag server dmodels_last_pack_version:<[packversion]>
+        - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[pack_root]>/pack.mcmeta def.data:<map.with[pack].as[<map[pack_format=<[packversion]>;description=dModels_AutoPack_Default]>].to_json[native_types=true;indent=4].utf8_encode>
     # =============== Textures loading ===============
     - define tex_id 0
+    - define texture_paths <list>
     - foreach <[data.textures]||<list>> as:texture:
         - define texname <[texture.name]>
         - if <[texname].ends_with[.png]>:
@@ -79,6 +82,7 @@ dmodels_load_bbmodel:
         - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[texture_output_path]> def.data:<[raw_source].after[,].base64_to_binary>
         - define proper_path dmodels/<[model_name]>/<[texname]>
         - define mc_texture_data.<[tex_id]> <[proper_path]>
+        - define texture_paths:->:<[proper_path]>
         - if <[texture.particle]||false>:
             - define mc_texture_data.particle <[proper_path]>
         - define tex_id:++
@@ -134,6 +138,32 @@ dmodels_load_bbmodel:
                 - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames <[animation_list.<[animation.name]>.animators.<[o_uuid]>.frames].sort_by_value[get[time]]>
     - if <[animation_list].any||false>:
         - flag server dmodels_data.animations_<[model_name]>:<[animation_list]>
+    # =============== Atlas gen ===============
+    - define atlas_file <[pack_root]>/assets/minecraft/atlases/blocks.json
+    - waituntil rate:1t max:15s !<server.has_flag[dmodels_temp_atlas_handling]>
+    - if <server.has_flag[dmodels_temp_atlas_file]>:
+        - define atlas_data <util.parse_yaml[<server.flag[dmodels_temp_atlas_file].utf8_decode>]>
+    - else if <util.has_file[<[atlas_file]>]>:
+        - flag server dmodels_temp_atlas_handling expire:1h
+        - ~fileread path:<[atlas_file]> save:atlas_file_data
+        - flag server dmodels_temp_atlas_handling:!
+        - define atlas_data <util.parse_yaml[<entry[atlas_file_data].data.utf8_decode>]>
+    - else:
+        - definemap atlas_data sources:<list>
+    - define known_atlas_dirs <[atlas_data.sources].parse[get[source]].deduplicate>
+    - define atlas_dirs_to_track <[texture_paths].parse[before_last[/]].deduplicate>
+    - define atlas_dirs_to_add <[atlas_dirs_to_track].exclude[<[known_atlas_dirs]>]>
+    - if <[atlas_dirs_to_add].any>:
+        - foreach <[atlas_dirs_to_add]> as:new_dir:
+            - definemap src:
+                type: directory
+                source: <[new_dir]>
+                prefix: <[new_dir]>/
+            - define atlas_data.sources:->:<[src]>
+        - define new_atlas_json <[atlas_data].to_json[indent=4].utf8_encode>
+        - flag server dmodels_temp_atlas_file:<[new_atlas_json]> expire:1h
+        - waituntil rate:1t max:15s !<server.has_flag[dmodels_data.temp_core.filewrites.<[atlas_file].escaped>]>
+        - run dmodels_multiwaitable_filewrite def.key:core def.path:<[atlas_file]> def.data:<[new_atlas_json]>
     # =============== Item model file generation ===============
     - waituntil rate:1t max:15s !<server.has_flag[dmodels_temp_item_reading]>
     - if <server.has_flag[dmodels_temp_item_file]>:
@@ -198,10 +228,10 @@ dmodels_load_bbmodel:
     - if <[overrides_changed]>:
         - define override_file_json <[override_item_data].to_json[native_types=true;indent=4].utf8_encode>
         - flag server dmodels_temp_item_file:<[override_file_json]> expire:1h
-        - waituntil rate:1t max:15s !<server.has_flag[dmodels_data.temp_<[model_name]>.filewrites.<[override_item_filepath].escaped>]>
+        - waituntil rate:1t max:15s !<server.has_flag[dmodels_data.temp_core.filewrites.<[override_item_filepath].escaped>]>
         - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[override_item_filepath]> def.data:<[override_file_json]>
     # Ensure all filewrites are done before ending the task
-    - waituntil rate:1t max:5m <server.flag[dmodels_data.temp_<[model_name]>.filewrites].is_empty||true>
+    - waituntil rate:1t max:5m <server.flag[dmodels_data.temp_<[model_name]>.filewrites].is_empty||true> && <server.flag[dmodels_data.temp_core.filewrites].is_empty||true>
     # Final clear of temp data
     - flag server dmodels_data.temp_<[model_name]>:!
 
