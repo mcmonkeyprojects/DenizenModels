@@ -85,13 +85,13 @@ dmodels_move_to_frame:
                         - define after_extra <[relevant_frames].filter[get[time].is_more_than[<[after_frame.time]>]].first||null>
                         - if <[after_extra]> == null:
                             - define after_extra <[animation_data.loop].equals[loop].if_true[<[relevant_frames].first>].if_false[<[after_frame]>]>
-                        - define p0 <[before_extra.data].as_location>
-                        - define p1 <[before_frame.data].as_location>
-                        - define p2 <[after_frame.data].as_location>
-                        - define p3 <[after_extra.data].as_location>
+                        - define p0 <[before_extra.data].as[location]>
+                        - define p1 <[before_frame.data].as[location]>
+                        - define p2 <[after_frame.data].as[location]>
+                        - define p3 <[after_extra.data].as[location]>
                         - define data <proc[dmodels_catmullrom_proc].context[<[p0]>|<[p1]>|<[p2]>|<[p3]>|<[time_percent]>]>
                     - case linear:
-                        - define data <[after_frame.data].as_location.sub[<[before_frame.data]>].mul[<[time_percent]>].add[<[before_frame.data]>].xyz>
+                        - define data <[after_frame.data].as[location].sub[<[before_frame.data]>].mul[<[time_percent]>].add[<[before_frame.data]>].xyz>
                     - case step:
                         - define data <[before_frame.data]>
             - define framedata.<[channel]> <[data]>
@@ -105,8 +105,8 @@ dmodels_move_to_frame:
         - define parent_raw_offset <[model_data.<[parent_id]>.origin]||0,0,0>
         - define rel_offset <location[<[this_part.origin]>].sub[<[parent_raw_offset]>]>
         - define rot_offset <[rel_offset].proc[dmodels_rot_proc].context[<[parent_rot]>]>
-        - define new_pos <[framedata.position].as_location.proc[dmodels_rot_proc].context[<[parent_rot]>].add[<[rot_offset]>].add[<[parent_pos]>]>
-        - define new_rot <[framedata.rotation].as_location.add[<[parent_rot]>].add[<[pose]>]>
+        - define new_pos <[framedata.position].as[location].proc[dmodels_rot_proc].context[<[parent_rot]>].add[<[rot_offset]>].add[<[parent_pos]>]>
+        - define new_rot <[framedata.rotation].as[location].add[<[parent_rot]>].add[<[pose]>]>
         - define parentage.<[part_id]>.position <[new_pos]>
         - define parentage.<[part_id]>.rotation <[new_rot]>
         - define parentage.<[part_id]>.offset <[rot_offset].add[<[parent_offset]>]>

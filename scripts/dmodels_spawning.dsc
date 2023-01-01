@@ -46,7 +46,7 @@ dmodels_spawn_model:
         - define parent_raw_offset <[model_data.<[parent_id]>.origin]||0,0,0>
         - define rel_offset <location[<[part.origin]>].sub[<[parent_raw_offset]>]>
         - define rot_offset <[rel_offset].proc[dmodels_rot_proc].context[<[parent_rot]>]>
-        - define new_pos <[rot_offset].as_location.add[<[parent_pos]>]>
+        - define new_pos <[rot_offset].as[location].add[<[parent_pos]>]>
         - define new_rot <[parent_rot].add[<[pose]>]>
         - define parentage.<[id]>.position <[new_pos]>
         - define parentage.<[id]>.rotation <[new_rot]>
