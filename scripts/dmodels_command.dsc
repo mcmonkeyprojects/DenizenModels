@@ -26,23 +26,23 @@ dmodels_command:
     - define arg1 <context.args.first||help>
     - if !<[arg1].matches_character_set[<script[dmodels_cmd_data].data_key[valid_chars]>]>:
         - define arg1 help
-    - if !<player.has_permission[dmodels.<[arg1]>]>:
+    - if !<player.has_permission[dmodels.<[arg1]>]||<context.server>>:
         - narrate "<&[error]>You do not have permission for that."
         - stop
     - choose <[arg1]>:
         - case load:
             - if !<context.args.get[2].exists>:
                 - narrate "<&[warning]>/dmodels load [path] <&[error]>- loads a model from file based on filename"
-                - narrate <script.parsed_key[load_example]>
+                - narrate <script.parsed_key[data.load_example]>
                 - stop
             - define path <context.args.get[2]>
             - if !<[path].to_lowercase.matches_character_set[<script[dmodels_cmd_data].data_key[valid_chars]>]>:
                 - narrate "<&[error]>Given file path has an invalid format. Double-check that you entered the exact name, without root path, and without the '.bbmodel' suffix."
-                - narrate <script.parsed_key[load_example]>
+                - narrate <script.parsed_key[data.load_example]>
                 - stop
             - if !<util.has_file[data/dmodels/<[path]>.bbmodel]>:
                 - narrate "<&[error]>No file exists at the given path. Double-check that you entered the exact name, without root path, and without the '.bbmodel' suffix."
-                - narrate <script.parsed_key[load_example]>
+                - narrate <script.parsed_key[data.load_example]>
                 - stop
             - if <server.has_flag[dmodels_data.model_<[path]>]>:
                 - narrate "<&[base]>That model is already loaded and will be reloaded..."
