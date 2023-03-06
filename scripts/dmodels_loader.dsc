@@ -76,7 +76,7 @@ dmodels_load_bbmodel:
     - define tex_id 0
     - define texture_paths <list>
     - foreach <[data.textures]||<list>> as:texture:
-        - define texname <[texture.name]>
+        - define texname <[texture.name].to_lowercase>
         - if <[texname].ends_with[.png]>:
             - define texname <[texname].before[.png]>
         - define raw_source <[texture.source]||>
@@ -97,6 +97,7 @@ dmodels_load_bbmodel:
             - foreach next
         - if !<[element.faces.north.texture].exists>:
             - foreach next
+        - define element.name <[element.name].to_lowercase>
         - define element.origin <[element.origin].separated_by[,]||0,0,0>
         - define element.rotation <[element.rotation].separated_by[,]||0,0,0>
         - define flagname dmodels_data.model_<[model_name]>.namecounter_element.<[element.name]>
@@ -107,6 +108,7 @@ dmodels_load_bbmodel:
     # =============== Outlines loading ===============
     - define root_outline null
     - foreach <[data.outliner]||<list>> as:outliner:
+        - define outliner.name <[outliner.name].to_lowercase>
         - if <[outliner].matches_character_set[abcdef0123456789-]>:
             - if <[root_outline]> == null:
                 - definemap root_outline name:__root__ origin:0,0,0 rotation:0,0,0 uuid:genroot_<util.random_uuid> parent:none
@@ -191,7 +193,7 @@ dmodels_load_bbmodel:
         - foreach <server.flag[dmodels_data.temp_<[model_name]>.raw_elements]> as:element:
             - if <[outline.children].contains[<[element.uuid]>]||false>:
                 - define child_count:++
-                - define jsonelement.name <[element.name]>
+                - define jsonelement.name <[element.name].to_lowercase>
                 - define rot <location[<[element.rotation]>]>
                 - define jsonelement.from <location[<[element.from].separated_by[,]>].sub[<[outline_origin]>].mul[<[scale_factor]>].xyz.split[,]>
                 - define jsonelement.to <location[<[element.to].separated_by[,]>].sub[<[outline_origin]>].mul[<[scale_factor]>].xyz.split[,]>
@@ -211,12 +213,12 @@ dmodels_load_bbmodel:
         - define outline.children:!
         - if <[child_count]> > 0:
             #### Item override building
-            - definemap json_group name:<[outline.name]> color:0 children:<util.list_numbers[from=0;to=<[child_count]>]> origin:<[outline_origin].mul[<[scale_factor]>].xyz.split[,]>
+            - definemap json_group name:<[outline.name].to_lowercase> color:0 children:<util.list_numbers[from=0;to=<[child_count]>]> origin:<[outline_origin].mul[<[scale_factor]>].xyz.split[,]>
             - define model_json.groups <list[<[json_group]>]>
             - define model_json.display.head.translation <list[32|25|32]>
             - define model_json.display.head.scale <list[4|4|4]>
-            - define modelpath item/dmodels/<[model_name]>/<[outline.name]>
-            - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[models_root]>/<[outline.name]>.json def.data:<[model_json].to_json[native_types=true;indent=4].utf8_encode>
+            - define modelpath item/dmodels/<[model_name]>/<[outline.name].to_lowercase>
+            - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[models_root]>/<[outline.name].to_lowercase>.json def.data:<[model_json].to_json[native_types=true;indent=4].utf8_encode>
             - define cmd 0
             - define min_cmd 1000
             - foreach <[override_item_data.overrides]||<list>> as:override:
