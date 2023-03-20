@@ -77,6 +77,9 @@ dmodels_command:
             - narrate "<&[base]>Removed model <[model].custom_color[emphasis]> from memory."
         - case unloadall:
             - flag server dmodels_data:!
+            - flag server dmodels_temp_item_file:!
+            - flag server dmodels_temp_atlas_file:!
+            - flag server dmodels_last_pack_version:!
             - narrate "<&[base]>Removed all DModels data from meory."
         - case spawn:
             - if !<context.args.get[2].exists>:
