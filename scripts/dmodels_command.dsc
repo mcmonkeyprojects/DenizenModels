@@ -80,7 +80,7 @@ dmodels_command:
             - flag server dmodels_temp_item_file:!
             - flag server dmodels_temp_atlas_file:!
             - flag server dmodels_last_pack_version:!
-            - narrate "<&[base]>Removed all DModels data from meory."
+            - narrate "<&[base]>Removed all DModels data from memory."
         - case spawn:
             - if !<context.args.get[2].exists>:
                 - narrate "<&[warning]>/dmodels spawn [model] <&[error]>- spawns a model at your position (must be loaded)"
@@ -153,6 +153,45 @@ dmodels_command:
                 - run dmodels_npc_despawn
                 - run dmodels_npc_spawn
             - narrate "<&[base]>NPC <npc.id.custom_color[emphasis]> (<npc.name><&[base]>) will now render as model <[model].custom_color[emphasis]>"
+        - case rotate:
+            - if !<context.args.get[2].exists>:
+                - narrate "<&[warning]>/dmodels rotate [0,0,0] <&[error]>- causes the closest real-spawned model to rotate to the given euler angles in degrees."
+                - stop
+            - define rotation <location[<context.args.get[2].split[,].parse[to_radians].comma_separated>]||null>
+            - if <[rotation]> == null:
+                - narrate "<&[error]>Given rotation is invalid must be in the form 90,0,0."
+                - stop
+            - inject dmodels_get_target
+            - run dmodels_set_rotation def.root_entity:<[target]> def.quaternion:<proc[dmodels_quaternion_from_euler].context[<[rotation].xyz.split[,]>]>
+            - narrate "<&[base]>Model <[target].flag[dmodel_model_id].custom_color[emphasis]> rotation is now <[rotation].xyz.split[,].parse[to_degrees].parse[round_up_to_precision[0.01]].comma_separated>"
+        - case scale:
+            - if !<context.args.get[2].exists>:
+                - narrate "<&[warning]>/dmodels scale [0,0,0] <&[error]>- causes the closest real-spawned model to globally scale."
+                - stop
+            - define scale <location[<context.args.get[2]>]||null>
+            - if <[scale]> == null:
+                - narrate "<&[error]>Given scale is invalid must be in the form 1,1,1."
+                - stop
+            - inject dmodels_get_target
+            - run dmodels_set_scale def.root_entity:<[target]> def.scale:<[scale]>
+        - case color:
+            - if !<context.args.get[2].exists>:
+                - narrate "<&[warning]>/dmodels color [255,255,255] <&[error]>- causes the closest real-spawned model to change color."
+                - stop
+            - define color <color[<context.args.get[2]>]||null>
+            - if <[color]> == null:
+                - narrate "<&[error]>Given color is invalid must be in the form red/255,0,0."
+            - inject dmodels_get_target
+            - run dmodels_set_color def.root_entity:<[target]> def.color:<[color]>
+            - narrate "<&[base]>Model <[target].flag[dmodel_model_id].custom_color[emphasis]> color is now <[color].rgb>"
+        - case viewrange:
+            - if !<context.args.get[2].exists>:
+                - narrate "<&[warning]>/dmodels view range [0] <&[error]>- sets the view range of the closest real-spawned model."
+                - stop
+            - inject dmodels_get_target
+            - define view_range <context.args.get[2]>
+            - run dmodels_set_view_range def.root_entity:<[target]> def.view_range:<[view_range]>
+            - narrate "<&[base]>Model <[target].flag[dmodel_model_id].custom_color[emphasis]> view range is now <[view_range]>"
         # help
         - default:
             - if <player.has_permission[dmodels.load]||true>:
@@ -179,7 +218,7 @@ dmodels_get_target:
     type: task
     debug: false
     script:
-    - define target <player.location.find_entities[dmodel_part_stand].within[10].filter[has_flag[dmodel_model_id]].first||null>
+    - define target <player.location.find_entities[dmodel_part_display].within[10].filter[has_flag[dmodel_model_id]].first||null>
     - if !<[target].is_truthy>:
         - narrate "<&[error]>No spawned model is close enough. Are you near a model? If so, are you sure it's an independent real-spawned model (as opposed to fake-spawned, or separately attached)?"
         - stop
@@ -189,7 +228,7 @@ dmodels_tab_1:
     debug: false
     script:
     - define list <list>
-    - foreach load|loadall|spawn|remove|animate|stopanimate|npcmodel|help|unload|unloadall as:key:
+    - foreach load|loadall|spawn|remove|animate|stopanimate|npcmodel|help|unload|unloadall|rotate|scale|color|viewrange as:key:
         - if <player.has_permission[dmodels.<[key]>]||true>:
             - define list:->:<[key]>
     - determine <[list]>
