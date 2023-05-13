@@ -9,9 +9,9 @@
 # @contributors Max^
 # @thanks Darwin, Max^, kalebbroo, sharklaserss - for helping with reference models, testing, ideas, etc
 # @date 2022/06/01
-# @updated 2022/12/24
+# @updated 2023/05/12
 # @denizen-build REL-1782
-# @script-version 1.6
+# @script-version 1.7
 #
 # This takes BlockBench "BBModel" files, converts them to a client-ready resource pack and Denizen internal data,
 # then is able to display them in minecraft and even animate them, by spawning and moving invisible armor stands with resource pack items on their heads.
@@ -55,6 +55,9 @@
 #   /dmodels animate [animation]   - "dmodels.animate"      - Causes your nearest real-spawned model to play the specified animation
 #   /dmodels stopanimate           - "dmodels.stopanimate"  - Causes your nearest real-spawned model to stop animating
 #   /dmodels npcmodel [model]      - "dmodels.npcmodel"     - sets an NPC to render as a given model (must be loaded). Use 'none' to remove the model.
+#   /dmodels rotate [0,0,0]        - "dmodels.rotate"       - Rotates the entire model to the set euler angles.
+#   /dmodels scale [1,1,1]         - "dmodels.scale"        - Scales the entire model to the set scale.
+#   /dmodels color [255,255,255]   - "dmodels.color"        - Sets the color of the model to the set color.
 #
 # #########
 #
@@ -75,6 +78,12 @@
 # - run dmodels_move_to_frame def.root_entity:<[root]> def.animation:idle def.timespot:0.5
 # # To remove a model
 # - run dmodels_delete def.root_entity:<[root]>
+# # To rotate a model
+# - run dmodels_set_rotation def.root_entity:<[root]> def.quaternion:<quaternion[identity]>
+# # To scale a model
+# - run dmodels_scale_model def.root_entity:<[root]> def.scale:<location[1,1,1]>
+# # To set the color of a model
+# - run dmodels_set_color def.root_entity:<[root]> def.color:<color[red]>
 #
 # #########
 #
@@ -92,11 +101,13 @@
 #                 list: A ListTag of valid model names, equivalent to the ones that can be input to 'dmodels_load_bbmodel'
 #             This task should be ~waited for.
 #         dmodels_spawn_model
-#             Usage: Spawns a single instance of a model using real armor stand entities at a location.
+#             Usage: Spawns a single instance of a model using real item display entities at a location.
 #             Input definitions:
 #                 model_name: The name of the model to spawn, must already have been loaded via 'dmodels_load_bbmodel'.
 #                 location: The location to spawn the model at.
-#                 tracking_range: (OPTIONAL) can override the global tracking_range setting in the config below per-model if desired.
+#                 scale: The scale to spawn the model with.
+#                 rotation: The rotation to spawn the model with.
+#                 view_range: (OPTIONAL) can override the global view_range setting in the config below per-model if desired.
 #                 fake_to: (OPTIONAL) list of players to fake-spawn the model to. If left off, will use a real (serverside) entity spawn.
 #             Supplies determination: EntityTag of the model root entity.
 #         dmodels_delete
@@ -104,7 +115,7 @@
 #             Input definitions:
 #                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
 #         dmodels_reset_model_position
-#             Usage: Resets any animation data on a model, moving the model back to its default positioning.
+#             Usage: Updates the model's position, rotation, and scale.
 #             Input definitions:
 #                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
 #         dmodels_end_animation
@@ -123,6 +134,28 @@
 #                 animation: The name of the animation to play (as set in BlockBench).
 #                 timespot: The time (in seconds) from the start of the animation to select as the frame.
 #                 delay_pose: 'true' if playing fluidly to offset the pose application over time, 'false' to snap exactly to frame position.
+#         dmodels_set_rotation:
+#             Usage: Sets the global rotation of the model
+#             Input definitions:
+#                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
+#                 quaternion: The quaternion to set the rotation to.
+#                 update: 'true' if the model should update it's global rotation.
+#         dmodel_set_scale:
+#             Usage: Sets the scale of the model
+#             Input definitions:
+#                 root_entity: The root entity gotten from 'dmodels_spawn_model
+#                 scale: The scale to set the model to as a LocationTag <location[1,1,1]>.
+#                 update: 'true' if the model should update it's scale.
+#         dmodels_set_color:
+#             Usage: Sets the color of the model
+#             Input definitions:
+#                 root_entity: The root entity gotten from 'dmodels_spawn_model
+#                 color: The color to set the model to as a ColorTag <color[red]>.'
+#         dmodels_set_view_range:
+#             Usage: Sets the view range of the model
+#             Input definitions:
+#                 root_entity: The root entity gotten from 'dmodels_spawn_model
+#                 view_range: The view range of the model.
 #         dmodels_attach_to
 #             Usage: Attaches a model's position/rotation to an entity.
 #             Input definitions:
@@ -137,9 +170,20 @@
 #             'dmodel_anim_part.<ID_HERE>': a mapping of outline IDs to the part entity spawned for them.
 #             'dmodels_animation_id': only if the model is animating automatically, contains the animation ID.
 #             'dmodels_anim_time': only if the model is animating automatically, contains the progress through the current animation as a number representing time.
+#             'dmodels_global_rotation' the rotation of the entire model this also affects the rotation while the model is animating.
+#             'dmodels_global_scale' the scale of the entire model.
+#             'dmodels_view_range' the view range of the model.
+#             'dmodels_color' the color of the model.
+#             'dmodels_can_teleport' determines if the root and parts of the model can teleport or not this should be used for non-moveable animated models.
 #             'dmodels_attached_to': the entity this model is attached to, if any.
 #             'dmodels_temp_alt_anim': if set to a truthy value, will tell the model to not play any auto-animations (so other scripts can indicate they need to override the default)
-#        Additional flags are present on both the root and on parts, but are not considered API - use at your own risk.
+#         Parts of the model have the following flags:
+#             'dmodel_def_part_id': the name of the part.
+#             'dmodel_def_can_rotate' if the part can rotate or not while playing animations.
+#             'dmodel_def_can_scale' if the part can scale or not while playing animations.
+#             'dmodel_def_pose' the default pose of the part after spawning
+#             'dmodel_def_offset' the relative offset of the part from the root entity's position
+#             'dmodel_root' returns the root entity of the part
 #
 # #########
 #
@@ -158,10 +202,10 @@
 dmodels_config:
     type: data
     debug: false
-    # You can optionally set a tracking range for all properly-spawned model entities.
-    # If set to 0, will use the server default for armor stands.
+    # You can optionally set a view range for all properly-spawned model entities.
+    # If set to 0, will use the server default for display entities.
     # You can instead set to a value like 16 for only short range visibility, or 128 for super long range, or any other number.
-    tracking_range: 0
+    view_range: 0
     # You can choose which item is used to override for models.
     # Using a leather based item is recommended to allow for dynamically recoloring items.
     # Leather_Horse_Armor is ideal because other leather armors make noise when equipped.
