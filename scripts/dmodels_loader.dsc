@@ -42,7 +42,7 @@ dmodels_load_bbmodel:
       - stop
     - define override_item_filepath <[pack_root]>/assets/minecraft/models/item/<script[dmodels_config].data_key[item]>.json
     - define file data/dmodels/<[model_name]>.bbmodel
-    - define scale_factor <element[2.285].div[4]>
+    - define scale_factor <static[<element[0.25].div[4.0]>]>
     - define mc_texture_data <map>
     - flag server dmodels_data.temp_<[model_name]>:!
     # =============== BBModel loading and validation ===============
@@ -63,7 +63,7 @@ dmodels_load_bbmodel:
         - debug error "[DModels] Can't load bbmodel for '<[model_name]>' - file has no elements?"
         - stop
     # =============== Pack validation ===============
-    - define packversion 12
+    - define packversion 13
     - if !<util.has_file[<[pack_root]>/pack.mcmeta]>:
         - run dmodels_multiwaitable_filewrite def.key:core def.path:<[pack_root]>/pack.mcmeta def.data:<map.with[pack].as[<map[pack_format=<[packversion]>;description=dModels_AutoPack_Default]>].to_json[native_types=true;indent=4].utf8_encode>
     - else if <server.flag[dmodels_last_pack_version]||0> != packversion:
@@ -123,9 +123,6 @@ dmodels_load_bbmodel:
     # =============== Animations loading ===============
     - foreach <[data.animations]||<list>> as:animation:
         - define animation_list.<[animation.name]>.loop <[animation.loop]>
-        - define animation_list.<[animation.name]>.override <[animation.override]>
-        - define animation_list.<[animation.name]>.anim_time_update <[animation.anim_time_update]>
-        - define animation_list.<[animation.name]>.blend_weight <[animation.blend_weight]>
         - define animation_list.<[animation.name]>.length <[animation.length]>
         - define animator_data <[animation.animators]||<map>>
         - foreach <server.flag[dmodels_data.temp_<[model_name]>.raw_outlines]> key:o_uuid as:outline_data:
@@ -134,10 +131,12 @@ dmodels_load_bbmodel:
                 - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames <list>
             - else:
                 - foreach <[animator.keyframes]> as:keyframe:
-                    - definemap anim_map channel:<[keyframe.channel]> time:<[keyframe.time]> interpolation:<[keyframe.interpolation]>
+                    - define channel <[keyframe.channel]>
+                    - definemap anim_map channel:<[channel]> time:<[keyframe.time]> interpolation:<[keyframe.interpolation]>
                     - define data_points <[keyframe.data_points].first>
-                    - if <[anim_map.channel]> == rotation:
-                        - define anim_map.data <[data_points.x].trim.to_radians>,<[data_points.y].trim.to_radians>,<[data_points.z].trim.to_radians>
+                    - if <[channel]> == rotation:
+                        - define rotation <proc[dmodels_quaternion_from_euler].context[<[data_points.x].trim.to_radians.mul[-1]>|<[data_points.y].trim.to_radians.mul[-1]>|<[data_points.z].trim.to_radians>]>
+                        - define anim_map.data <[rotation].x>,<[rotation].y>,<[rotation].z>,<[rotation].w>
                     - else:
                         - define anim_map.data <[data_points.x].trim>,<[data_points.y].trim>,<[data_points.z].trim>
                     - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames:->:<[anim_map]>
@@ -215,7 +214,7 @@ dmodels_load_bbmodel:
             #### Item override building
             - definemap json_group name:<[outline.name].to_lowercase> color:0 children:<util.list_numbers[from=0;to=<[child_count]>]> origin:<[outline_origin].mul[<[scale_factor]>].xyz.split[,]>
             - define model_json.groups <list[<[json_group]>]>
-            - define model_json.display.head.translation <list[32|25|32]>
+            - define model_json.display.head.translation <list[32|32|32]>
             - define model_json.display.head.scale <list[4|4|4]>
             - define modelpath item/dmodels/<[model_name]>/<[outline.name].to_lowercase>
             - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[models_root]>/<[outline.name].to_lowercase>.json def.data:<[model_json].to_json[native_types=true;indent=4].utf8_encode>
@@ -229,8 +228,10 @@ dmodels_load_bbmodel:
                 - define cmd <[min_cmd]>
                 - define override_item_data.overrides:->:<map[predicate=<map[custom_model_data=<[cmd]>]>].with[model].as[<[modelpath]>]>
                 - define overrides_changed true
-            - define outline.item <script[dmodels_config].data_key[item]>[custom_model_data=<[cmd]>]
+            - define outline.item <script[dmodels_config].data_key[item]>[custom_model_data=<[cmd]>;color=<color[white]>]
         # This sets the actual live usage flag data
+        - define rotation <[outline.rotation].split[,]>
+        - define outline.rotation <proc[dmodels_quaternion_from_euler].context[<[rotation].get[1].to_radians>|<[rotation].get[2].to_radians>|<[rotation].get[3].to_radians>]>
         - flag server dmodels_data.model_<[model_name]>.<[outline.uuid]>:<[outline]>
     - if <[overrides_changed]>:
         - define override_file_json <[override_item_data].to_json[native_types=true;indent=4].utf8_encode>
@@ -261,6 +262,7 @@ dmodels_facefix:
     - define mul_x <element[16].div[<[resolution.width]>]>
     - define mul_y <element[16].div[<[resolution.height]>]>
     - define out.uv <list[<[uv].get[1].mul[<[mul_x]>]>|<[uv].get[2].mul[<[mul_y]>]>|<[uv].get[3].mul[<[mul_x]>]>|<[uv].get[4].mul[<[mul_y]>]>]>
+    - define out.tintindex 0
     - determine <[out]>
 
 dmodels_loader_addchild:
@@ -305,3 +307,16 @@ dmodels_loader_readoutline:
     - flag server dmodels_data.temp_<[model_name]>.raw_outlines.<[new_outline.uuid]>:<[new_outline]>
     - foreach <[raw_children]> as:child:
         - run dmodels_loader_addchild def.model_name:<[model_name]> def.parent:<[outline]> def.child:<[child]>
+
+# Might wanna add from_euler to the quaternion tag
+dmodels_quaternion_from_euler:
+    type: procedure
+    debug: false
+    definitions: x|y|z
+    description: Converts euler angles in radians to a quaternion.
+    script:
+    - define x_q <location[1,0,0].to_axis_angle_quaternion[<[x]>]>
+    - define y_q <location[0,1,0].to_axis_angle_quaternion[<[y]>]>
+    - define z_q <location[0,0,1].to_axis_angle_quaternion[<[z]>]>
+    - determine <[x_q].mul[<[y_q]>].mul[<[z_q]>]>
+
