@@ -1,7 +1,7 @@
 Denizen Models
 --------------
 
-**Denizen Models**, aka **dModels**, is a tool that can take [BlockBench](https://www.blockbench.net/) "generic" models and render them in minecraft, including with full animations, by spawning sets of armor stands.
+**Denizen Models**, aka **dModels**, is a tool that can take [BlockBench](https://www.blockbench.net/) "generic" models and render them in minecraft, including with full animations, by spawning sets of item display entities.
 
 As the name implies, this relies on [Denizen](https://github.com/DenizenScript/Denizen).
 

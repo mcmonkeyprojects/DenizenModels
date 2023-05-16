@@ -14,7 +14,7 @@
 # @script-version 2.0
 #
 # This takes BlockBench "BBModel" files, converts them to a client-ready resource pack and Denizen internal data,
-# then is able to display them in minecraft and even animate them, by spawning and moving invisible armor stands with resource pack items on their heads.
+# then is able to display them in minecraft and even animate them, by spawning and moving item display entities with resource pack items.
 #
 # Installation:
 # 1: Edit your "plugins/Denizen/config.yml", find "File:", and "Allow read" and "Allow write" inside, and set them both to "true", then use "/ex reload config"
@@ -27,12 +27,7 @@
 # 1: Create a model using blockbench - https://www.blockbench.net/
 # 1.1 Create as a 'Generic Model'
 # 1.2 Make basically anything you want
-# 1.3 Note that there is a scale limit, of roughly 73 blockbench units (about 4 minecraft block-widths),
-#     meaning you cannot have a section of block more than 36 blockbench units from its pivot point.
-#     If you need a larger object, add more Outliner groups with pivots moved over.
-# 1.4 Make sure pivot points are as correct as possible to minimize glitchiness from animations
-#     (for example, if you have a bone pivot point in the center of a block, but the block's own pivot point is left at default 0,0,0, this can lead to the armor stand having to move and rotate at the same time, and lose sync when doing so)
-# 1.5 Animate freely, make sure the animation names are clear
+# 1.3 Animate freely, make sure the animation names are clear
 # 2: Save the ".bbmodel" file into "plugins/Denizen/data/dmodels"
 # 3: Load the model. For now, just do a command like "/ex run dmodels_load_bbmodel def:GOAT" but replace "GOAT" with the name of your model
 #    This will output a resource pack to "plugins/Denizen/data/dmodels/res_pack/"
