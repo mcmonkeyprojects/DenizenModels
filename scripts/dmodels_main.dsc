@@ -42,22 +42,23 @@
 # #########
 # Commands:
 #   /[Command]                     - [Permission]           - [Description]
-#   /dmodels                       - "dmodels.help"         - Root command entry
-#   /dmodels help                  - "dmodels.help"         - Shows help information about the dModels command
-#   /dmodels load [path]           - "dmodels.load"         - Loads a single model based on model file name input
-#   /dmodels loadall               - "dmodels.loadall"      - Loads all models in the models folder
+#   /dmodels                       - "dmodels.help"         - Root command entry.
+#   /dmodels help                  - "dmodels.help"         - Shows help information about the dModels command.
+#   /dmodels load [path]           - "dmodels.load"         - Loads a single model based on model file name input.
+#   /dmodels loadall               - "dmodels.loadall"      - Loads all models in the models folder.
 #   /dmodels unload [model]        - "dmodels.unload"       - Unloads a single model from memory based on model name input.
 ######                                                      - This will not properly remove any spawned instances of that model, which may now be glitched as a result.
 ######                                                      - This also does not remove any data from the resource pack currently.
-#   /dmodels unloadall             - "dmodels.unloadall"    - Unloads any/all DModels data from memory
-#   /dmodels spawn [model]         - "dmodels.spawn"        - Spawns a static instance of a model at your location
-#   /dmodels remove                - "dmodels.remove"       - Removes whichever real-spawned model is closest to your location
-#   /dmodels animate [animation]   - "dmodels.animate"      - Causes your nearest real-spawned model to play the specified animation
-#   /dmodels stopanimate           - "dmodels.stopanimate"  - Causes your nearest real-spawned model to stop animating
+#   /dmodels unloadall             - "dmodels.unloadall"    - Unloads any/all DModels data from memory.
+#   /dmodels spawn [model]         - "dmodels.spawn"        - Spawns a static instance of a model at your location.
+#   /dmodels remove                - "dmodels.remove"       - Removes whichever real-spawned model is closest to your location.
+#   /dmodels animate [animation]   - "dmodels.animate"      - Causes your nearest real-spawned model to play the specified animation.
+#   /dmodels stopanimate           - "dmodels.stopanimate"  - Causes your nearest real-spawned model to stop animating.
 #   /dmodels npcmodel [model]      - "dmodels.npcmodel"     - sets an NPC to render as a given model (must be loaded). Use 'none' to remove the model.
-#   /dmodels rotate [0,0,0]        - "dmodels.rotate"       - Rotates the entire model to the set euler angles.
-#   /dmodels scale [1,1,1]         - "dmodels.scale"        - Scales the entire model to the set scale.
-#   /dmodels color [255,255,255]   - "dmodels.color"        - Sets the color of the model to the set color.
+#   /dmodels rotate [angles]       - "dmodels.rotate"       - Sets the rotation of the nearest real-spawned model to the given euler angles. Use '0,0,0' for default.
+#   /dmodels scale [scale]         - "dmodels.scale"        - Sets the scale-multiplier of the nearest real-spawned model set to the given value. Use '1,1,1' for default.
+#   /dmodels color [color]         - "dmodels.color"        - Sets the color of the nearest real-spawned model to the given color. Use 'white' for default.
+#   /dmodels viewrange [range]     - "dmoddels.viewrange"   - Sets the view-range of the nearest real-spawned model to the given range (in blocks).
 #
 # #########
 #
