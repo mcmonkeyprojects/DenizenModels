@@ -26,14 +26,7 @@ Documented in the header of the `dmodels_main.dsc` script.
 
 ### Status
 
-Fifth beta release. Functions for most basic purposes and has user-friendly interfaces. More is planned for this. Some things are currently being changed around from what they were in the prior betas.
-
-#### Feature Targets
-
-A few feature targets exist as an open request for any contributor to help. These are considered priority to get figured out before the 'Beta' phase ends.
-
-- [Recolorable Models](https://github.com/mcmonkeyprojects/DenizenModels/issues/10)
-- [Perfect the Synchronization](https://github.com/mcmonkeyprojects/DenizenModels/issues/11)
+Initial '2.0' release. Most things are expected to work as normal. Performance may currently be sub-optimal.
 
 ### Licensing pre-note:
 
@@ -49,7 +42,7 @@ You can do basically whatever you want, except you may not hold any developer li
 
 The MIT License (MIT)
 
-Copyright (c) 2022 Alex "mcmonkey" Goodwin
+Copyright (c) 2022-2023 Alex "mcmonkey" Goodwin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
