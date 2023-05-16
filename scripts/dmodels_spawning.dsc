@@ -22,7 +22,10 @@ dmodel_part_display:
 dmodels_spawn_model:
     type: task
     debug: false
-    definitions: model_name[ElementTag]|location[LocationTag]|scale[LocationTag]|rotation[QuaternionTag]|view_range[Number]|fake_to[True/False]
+    definitions: model_name[The name of the model to spawn, must already have been loaded via 'dmodels_load_bbmodel'] | location[World location to spawn at] | scale[The scale to spawn the model with, as a LocationTag-vector] | rotation[The rotation to spawn the model with, as a quaternion.] | view_range[(OPTIONAL) can override the global view_range setting in the config below per-model if desired.] | fake_to[(OPTIONAL) list of players to fake-spawn the model to. If left off, will use a real (serverside) entity spawn.]
+    description:
+    - Spawns a single instance of a model using real item display entities at a location.
+    - Supplies determination: EntityTag of the model root entity.
     script:
     - if !<server.has_flag[dmodels_data.model_<[model_name]>]>:
         - debug error "[DModels] cannot spawn model <[model_name]>, model not loaded"
@@ -88,7 +91,8 @@ dmodels_spawn_model:
 dmodels_reset_model_position:
     type: task
     debug: false
-    definitions: root_entity[EntityTag]
+    definitions: root_entity[The root EntityTag from 'dmodels_spawn_model']
+    description: Resets any animation data on a model, moving the model back to its default positioning.
     script:
     - define model_id <[root_entity].flag[dmodel_model_id]>
     - define model_data <server.flag[dmodels_data.model_<[model_id]>]||null>
@@ -138,15 +142,15 @@ dmodels_mul_vecs:
     type: procedure
     debug: false
     definitions: a|b
-    description: Multiplies two vectors together
+    description: Multiplies two vectors together.
     script:
     - determine <location[<[a].x.mul[<[b].x>]>,<[a].y.mul[<[b].y>]>,<[a].z.mul[<[b].z>]>]>
 
 dmodels_delete:
     type: task
     debug: false
-    definitions: root_entity[EntityTag]
-    description: Removes a model from the world
+    definitions: root_entity[The root EntityTag from 'dmodels_spawn_model']
+    description: Removes a model from the world.
     script:
     - if !<[root_entity].is_truthy> || !<[root_entity].has_flag[dmodel_model_id]||false>:
         - debug error "[DModels] invalid delete root_entity <[root_entity]>"
@@ -159,8 +163,8 @@ dmodels_delete:
 dmodels_set_yaw:
     type: task
     debug: false
-    definitions: root_entity[EntityTag]|yaw[Number]|update[True/False]
-    description: Sets the yaw of the model
+    definitions: root_entity[The root EntityTag from 'dmodels_spawn_model'] | yaw[Number, 0 for default] | update[If not specified as 'false', will immediately update the model's position]
+    description: Sets the yaw of the model.
     script:
     - flag <[root_entity]> dmodel_yaw:<[yaw]>
     - if <[update]||true>:
@@ -169,8 +173,8 @@ dmodels_set_yaw:
 dmodels_set_rotation:
     type: task
     debug: false
-    definitions: root_entity[EntityTag]|quaternion[QuaternionTag]|update[True/False]
-    description: Sets the global rotation of a model
+    definitions: root_entity[The root EntityTag from 'dmodels_spawn_model'] | quaternion[QuaternionTag, 'identity' for default] | update[If not specified as 'false', will immediately update the model's position]
+    description: Sets the global rotation of a model.
     script:
     - if <quaternion[<[quaternion]>]||null> == null:
         - debug error "<&[error]>Invalid input the rotation must be a quaternion."
@@ -181,8 +185,8 @@ dmodels_set_rotation:
 dmodels_set_scale:
     type: task
     debug: false
-    definitions: root_entity[EntityTag]|scale[LocationTag]|update[True/False]
-    description: Sets the global scale of the model
+    definitions: root_entity[The root EntityTag from 'dmodels_spawn_model'] | scale[LocationTag, '1,1,1' for default] | update[If not specified as 'false', will immediately update the model's position]
+    description: Sets the global scale of the model.
     script:
     - if <location[<[scale]>]||null> == null:
         - debug error "<&[error]>Invalid input the scale must be a location."
@@ -193,7 +197,8 @@ dmodels_set_scale:
 dmodels_set_color:
     type: task
     debug: false
-    definitions: root_entity[EntityTag]|color[ColorTag]
+    definitions: root_entity[The root EntityTag from 'dmodels_spawn_model'] | color[ColorTag of the new item-tint to apply, 'white' for default]
+    description: Sets the item-color of the model.
     script:
     - if <color[<[color]>]||null> == null:
         - debug error "<&[error]>Invalid input must be a color."
@@ -207,7 +212,8 @@ dmodels_set_color:
 dmodels_set_view_range:
     type: task
     debug: false
-    definitions: root_entity[EntityTag]|view_range[Number]
+    definitions: root_entity[The root EntityTag from 'dmodels_spawn_model'] | view_range[Number]
+    description: Sets the view-range of the model.
     script:
     - flag <[root_entity]> dmodel_view_range:<[view_range]>
     - foreach <[root_entity].flag[dmodel_parts]> as:part:

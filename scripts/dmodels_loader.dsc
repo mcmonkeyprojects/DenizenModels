@@ -7,7 +7,10 @@
 dmodels_multi_load:
     type: task
     debug: false
-    definitions: list
+    definitions: list[A ListTag of valid model names, equivalent to the ones that can be input to 'dmodels_load_bbmodel']
+    description:
+    - Loads multiple models simultaneously, and ends the ~wait only after all models are loaded. This is faster than doing individual 'load' calls in a loop and waiting for each.
+    - This task should be ~waited for.
     script:
     - define key <util.random_uuid>
     - foreach <[list]> as:model:
@@ -29,7 +32,11 @@ dmodels_multiwaitable_load:
 dmodels_load_bbmodel:
     type: task
     debug: false
-    definitions: model_name
+    definitions: model_name[The name of the model to load, must correspond to the relevant '.bbmodel' file.]
+    description:
+    - Loads a model from source '.bbmodel' file by name into server data (flags). Also builds the resource pack entries for it.
+    - Should be called well in advance, when the model is added or changed. Does not need to be re-called until the model is changed again.
+    - This task should be ~waited for.
     script:
     - debug log "[DModels] loading <[model_name].custom_color[emphasis]>"
     # =============== Prep ===============

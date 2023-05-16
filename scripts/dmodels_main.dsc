@@ -80,89 +80,21 @@
 # # To remove a model
 # - run dmodels_delete def.root_entity:<[root]>
 # # To rotate a model
-# - run dmodels_set_rotation def.root_entity:<[root]> def.quaternion:<quaternion[identity]>
+# - run dmodels_set_rotation def.root_entity:<[root]> def.quaternion:identity
 # # To scale a model
-# - run dmodels_scale_model def.root_entity:<[root]> def.scale:<location[1,1,1]>
+# - run dmodels_scale_model def.root_entity:<[root]> def.scale:1,1,1
 # # To set the color of a model
-# - run dmodels_set_color def.root_entity:<[root]> def.color:<color[red]>
+# - run dmodels_set_color def.root_entity:<[root]> def.color:red
 #
 # #########
 #
 # API details:
-#     Runnable Tasks:
-#         dmodels_load_bbmodel
-#             Usage: Loads a model from source ".bbmodel" file by name into server data (flags). Also builds the resource pack entries for it.
-#                    Should be called well in advance, when the model is added or changed. Does not need to be re-called until the model is changed again.
-#             Input definitions:
-#                 model_name: The name of the model to load, must correspond to the relevant ".bbmodel" file.
-#             This task should be ~waited for.
-#         dmodels_multi_load
-#             Usage: Loads multiple models simultaneously, and ends the ~wait only after all models are loaded. This is faster than doing individual 'load' calls in a loop and waiting for each.
-#             Input definitions:
-#                 list: A ListTag of valid model names, equivalent to the ones that can be input to 'dmodels_load_bbmodel'
-#             This task should be ~waited for.
-#         dmodels_spawn_model
-#             Usage: Spawns a single instance of a model using real item display entities at a location.
-#             Input definitions:
-#                 model_name: The name of the model to spawn, must already have been loaded via 'dmodels_load_bbmodel'.
-#                 location: The location to spawn the model at.
-#                 scale: The scale to spawn the model with.
-#                 rotation: The rotation to spawn the model with.
-#                 view_range: (OPTIONAL) can override the global view_range setting in the config below per-model if desired.
-#                 fake_to: (OPTIONAL) list of players to fake-spawn the model to. If left off, will use a real (serverside) entity spawn.
-#             Supplies determination: EntityTag of the model root entity.
-#         dmodels_delete
-#             Usage: Deletes a spawned model.
-#             Input definitions:
-#                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
-#         dmodels_reset_model_position
-#             Usage: Updates the model's position, rotation, and scale.
-#             Input definitions:
-#                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
-#         dmodels_end_animation
-#             Usage: Stops any animation currently playing on a model, and resets its position.
-#             Input definitions:
-#                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
-#         dmodels_animate
-#             Usage: Starts a model animating the given animation, until the animation ends (if it does at all) or until the animation is changed or ended.
-#             Input definitions:
-#                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
-#                 animation: The name of the animation to play (as set in BlockBench).
-#         dmodels_move_to_frame
-#             Usage: Moves a model's position to a single frame of an animation. Not intended for external use except for debugging animation issues.
-#             Input definitions:
-#                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
-#                 animation: The name of the animation to play (as set in BlockBench).
-#                 timespot: The time (in seconds) from the start of the animation to select as the frame.
-#                 delay_pose: 'true' if playing fluidly to offset the pose application over time, 'false' to snap exactly to frame position.
-#         dmodels_set_rotation:
-#             Usage: Sets the global rotation of the model
-#             Input definitions:
-#                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
-#                 quaternion: The quaternion to set the rotation to.
-#                 update: 'true' if the model should update it's global rotation.
-#         dmodel_set_scale:
-#             Usage: Sets the scale of the model
-#             Input definitions:
-#                 root_entity: The root entity gotten from 'dmodels_spawn_model
-#                 scale: The scale to set the model to as a LocationTag <location[1,1,1]>.
-#                 update: 'true' if the model should update it's scale.
-#         dmodels_set_color:
-#             Usage: Sets the color of the model
-#             Input definitions:
-#                 root_entity: The root entity gotten from 'dmodels_spawn_model
-#                 color: The color to set the model to as a ColorTag <color[red]>.'
-#         dmodels_set_view_range:
-#             Usage: Sets the view range of the model
-#             Input definitions:
-#                 root_entity: The root entity gotten from 'dmodels_spawn_model
-#                 view_range: The view range of the model.
-#         dmodels_attach_to
-#             Usage: Attaches a model's position/rotation to an entity.
-#             Input definitions:
-#                 root_entity: The root entity gotten from 'dmodels_spawn_model'.
-#                 target: The entity to be attached to.
-#                 auto_animate: (OPTIONAL) set to 'true' to indicate the model should automatically apply animations based on the entity it's attached to. See 'core animations' list below.
+#     Runnable Tasks: (Specific documentation on the tasks themselves, visible automatically in the Denizen extension for VS Code when you run them)
+#         Loading: dmodels_load_bbmodel, dmodels_multi_load
+#         Spawning: dmodels_spawn_model, dmodels_delete
+#         Configuring: dmodels_reset_model_position, dmodels_set_yaw, dmodels_set_rotation, dmodels_set_scale, dmodels_set_color, dmodels_set_view_range
+#         Animation related: dmodels_end_animation, dmodels_animate, dmodels_attach_to
+#         Animation (internal): dmodels_move_to_frame
 #     Flags:
 #         Every entity spawned by DModels has the flag 'dmodel_root', that refers up to the root entity.
 #         The root entity has the following flags:

@@ -7,7 +7,8 @@
 dmodels_end_animation:
     type: task
     debug: false
-    definitions: root_entity
+    definitions: root_entity[The root EntityTag from 'dmodels_spawn_model']
+    description: Stops any animation currently playing on a model, and resets its position.
     script:
     - if !<[root_entity].is_truthy> || !<[root_entity].has_flag[dmodel_model_id]||false>:
         - debug error "[DModels] invalid end_animation root_entity <[root_entity]>"
@@ -20,7 +21,8 @@ dmodels_end_animation:
 dmodels_animate:
     type: task
     debug: false
-    definitions: root_entity|animation
+    definitions: root_entity[The root EntityTag from 'dmodels_spawn_model'] | animation[The name of the animation to play (as set in BlockBench)]
+    description: Starts a model animating the given animation, until the animation ends (if it does at all) or until the animation is changed or ended.
     script:
     - if !<[root_entity].is_truthy> || !<[root_entity].has_flag[dmodel_model_id]||false>:
         - debug error "[DModels] invalid animate root_entity <[root_entity]>"
@@ -37,7 +39,8 @@ dmodels_animate:
 dmodels_move_to_frame:
     type: task
     debug: false
-    definitions: root_entity[EntityTag]|animation[ElementTag]|timespot[Number]
+    definitions: root_entity[The root EntityTag from 'dmodels_spawn_model'] | animation[The name of the animation to play (as set in BlockBench)] | timespot[The time (in seconds) from the start of the animation to select as the frame.]
+    description: Moves a model's position to a single frame of an animation. Not intended for external use except for debugging animation issues.
     script:
     - define model_data <server.flag[dmodels_data.model_<[root_entity].flag[dmodel_model_id]>]>
     - define animation_data <server.flag[dmodels_data.animations_<[root_entity].flag[dmodel_model_id]>.<[animation]>]>
@@ -176,7 +179,8 @@ dmodels_catmullrom_proc:
 dmodels_attach_to:
     type: task
     debug: false
-    definitions: root_entity|target|auto_animate
+    definitions: root_entity[The root entity gotten from 'dmodels_spawn_model'.] | target[The entity to be attached to.] | auto_animate[(OPTIONAL) set to 'true' to indicate the model should automatically apply animations based on the entity it's attached to. See 'core animations' list below.]
+    description: Attaches a model's position/rotation to an entity.
     script:
     - if !<[root_entity].is_truthy> || !<[root_entity].has_flag[dmodel_model_id]||false>:
         - debug error "[DModels] invalid attach_to root_entity <[root_entity]>"
