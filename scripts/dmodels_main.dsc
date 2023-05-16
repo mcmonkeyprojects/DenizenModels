@@ -10,8 +10,8 @@
 # @thanks Darwin, Max^, kalebbroo, sharklaserss - for helping with reference models, testing, ideas, etc
 # @date 2022/06/01
 # @updated 2023/05/12
-# @denizen-build REL-1782
-# @script-version 1.7
+# @denizen-build REL-1793
+# @script-version 2.0
 #
 # This takes BlockBench "BBModel" files, converts them to a client-ready resource pack and Denizen internal data,
 # then is able to display them in minecraft and even animate them, by spawning and moving invisible armor stands with resource pack items on their heads.
