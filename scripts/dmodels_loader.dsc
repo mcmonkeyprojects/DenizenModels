@@ -73,7 +73,7 @@ dmodels_load_bbmodel:
     - define packversion 13
     - if !<util.has_file[<[pack_root]>/pack.mcmeta]>:
         - run dmodels_multiwaitable_filewrite def.key:core def.path:<[pack_root]>/pack.mcmeta def.data:<map.with[pack].as[<map[pack_format=<[packversion]>;description=dModels_AutoPack_Default]>].to_json[native_types=true;indent=4].utf8_encode>
-    - else if <server.flag[dmodels_last_pack_version]||0> != packversion:
+    - else if <server.flag[dmodels_last_pack_version]||0> != <[packversion]>:
         - ~fileread path:<[pack_root]>/pack.mcmeta save:mcmeta
         - define mcmeta_data <util.parse_yaml[<entry[mcmeta].data.utf8_decode>]>
         - define mcmeta_data.pack.pack_format <[packversion]>

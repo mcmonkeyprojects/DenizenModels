@@ -72,6 +72,7 @@ dmodels_spawn_model:
         - flag <[spawned]> dmodel_root:<[root]>
         - flag <[root]> dmodel_parts:->:<[spawned]>
         - flag <[root]> dmodel_anim_part.<[id]>:->:<[spawned]>
+    - run dmodels_reset_model_position def.root_entity:<[root]>
     - determine <[root]>
 
 dmodels_reset_model_position:
