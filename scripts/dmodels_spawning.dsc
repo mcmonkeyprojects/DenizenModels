@@ -38,7 +38,6 @@ dmodels_spawn_model:
     - flag <[root]> dmodel_global_rotation:<[rotation]>
     - flag <[root]> dmodel_view_range:<[view_range]>
     - flag <[root]> dmodel_color:<color[white]>
-    - flag <[root]> dmodel_can_teleport:true
     - define parentage <map>
     - define model_data <server.flag[dmodels_data.model_<[model_name]>]>
     - foreach <[model_data]> key:id as:part:
@@ -68,8 +67,6 @@ dmodels_spawn_model:
         - if <[view_range]> > 0:
             - adjust <[spawned]> view_range:<[view_range]>
         - flag <[spawned]> dmodel_def_part_id:<[id]>
-        - flag <[spawned]> dmodel_def_can_rotate:true
-        - flag <[spawned]> dmodel_def_can_scale:true
         - flag <[spawned]> dmodel_def_pose:<[new_rot]>
         - flag <[spawned]> dmodel_def_offset:<[translation]>
         - flag <[spawned]> dmodel_root:<[root]>
@@ -89,17 +86,16 @@ dmodels_reset_model_position:
         - debug error "<&[Error]> Could not update model for root entity <[root_entity]> as it does not exist."
         - stop
     - define center <[root_entity].location.with_pitch[0].above[1]>
-    - define global_scale <[root_entity].flag[dmodel_global_scale].mul[<proc[dmodels_default_scale]>]>
+    - define global_scale <[root_entity].flag[dmodel_global_scale].mul[<script[dmodels_config].parsed_key[default_scale]>]>
     - define yaw_quaternion <location[0,1,0].to_axis_angle_quaternion[<[root_entity].flag[dmodel_yaw].add[180].to_radians.mul[-1]>]>
     - define orientation <[yaw_quaternion].mul[<[root_entity].flag[dmodel_global_rotation]>]>
     - define parentage <map>
     - define root_parts <[root_entity].flag[dmodel_parts]>
     - foreach <[model_data]> key:id as:part:
-        - define rots <[part.rotation].split[,]>
-        - define pose <quaternion[<[rots].get[1]>,<[rots].get[2]>,<[rots].get[3]>,<[rots].get[4]>]>
+        - define pose <[part.rotation]>
         - define parent_id <[part.parent]>
         - define parent_pos <location[<[parentage.<[parent_id]>.position]||0,0,0>]>
-        - define parent_rot <[parentage.<[parent_id]>.rotation]||<quaternion[identity]>>
+        - define parent_rot <quaternion[<[parentage.<[parent_id]>.rotation]||identity>]>
         - define parent_raw_offset <[model_data.<[parent_id]>.origin]||0,0,0>
         - define rel_offset <location[<[part.origin]>].sub[<[parent_raw_offset]>]>
         - define orientation_parent <[orientation].mul[<[parent_rot]>]>
@@ -112,11 +108,9 @@ dmodels_reset_model_position:
           - if <[root_part].flag[dmodel_def_part_id]> == <[id]>:
             - teleport <[root_part]> <[center]>
             - adjust <[root_part]> translation:<[new_pos].proc[dmodels_mul_vecs].context[<[global_scale]>].div[16].mul[0.25]>
-            - if <[root_part].flag[dmodel_def_can_rotate]>:
-                - adjust <[root_part]> left_rotation:<[orientation]>
-                - adjust <[root_part]> right_rotation:<[pose]>
-            - if <[root_part].flag[dmodel_def_can_scale]>:
-                - adjust <[root_part]> scale:<[global_scale]>
+            - adjust <[root_part]> left_rotation:<[orientation]>
+            - adjust <[root_part]> right_rotation:<[pose]>
+            - adjust <[root_part]> scale:<[global_scale]>
 
 dmodels_mul_vecs:
     type: procedure

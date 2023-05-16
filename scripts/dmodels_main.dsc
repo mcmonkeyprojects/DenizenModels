@@ -100,23 +100,16 @@
 #         The root entity has the following flags:
 #             'dmodel_model_id': the name of the model used.
 #             'dmodel_parts': a list of all part entities spawned.
+#             'dmodel_global_rotation' the rotation of the entire model - this also affects the rotation while the model is animating.
+#             'dmodel_global_scale' the scale of the entire model.
+#             'dmodel_view_range' the view range of the model.
+#             'dmodel_color' the color of the model.
 #             'dmodel_anim_part.<ID_HERE>': a mapping of outline IDs to the part entity spawned for them.
 #             'dmodels_animation_id': only if the model is animating automatically, contains the animation ID.
 #             'dmodels_anim_time': only if the model is animating automatically, contains the progress through the current animation as a number representing time.
-#             'dmodels_global_rotation' the rotation of the entire model this also affects the rotation while the model is animating.
-#             'dmodels_global_scale' the scale of the entire model.
-#             'dmodels_view_range' the view range of the model.
-#             'dmodels_color' the color of the model.
-#             'dmodels_can_teleport' determines if the root and parts of the model can teleport or not this should be used for non-moveable animated models.
 #             'dmodels_attached_to': the entity this model is attached to, if any.
 #             'dmodels_temp_alt_anim': if set to a truthy value, will tell the model to not play any auto-animations (so other scripts can indicate they need to override the default)
-#         Parts of the model have the following flags:
-#             'dmodel_def_part_id': the name of the part.
-#             'dmodel_def_can_rotate' if the part can rotate or not while playing animations.
-#             'dmodel_def_can_scale' if the part can scale or not while playing animations.
-#             'dmodel_def_pose' the default pose of the part after spawning
-#             'dmodel_def_offset' the relative offset of the part from the root entity's position
-#             'dmodel_root' returns the root entity of the part
+#        Additional flags are present on both the root and on parts, but are not considered API - use at your own risk.
 #
 # #########
 #

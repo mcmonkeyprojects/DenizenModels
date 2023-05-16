@@ -59,8 +59,7 @@ dmodels_move_to_frame:
                 - define timespot <[animation_data.length]>
                 - flag server dmodels_anim_active.<[root_entity].uuid>:!
     - define global_rotation <[root_entity].flag[dmodel_global_rotation]>
-    - define global_scale <[root_entity].flag[dmodel_global_scale].mul[<proc[dmodels_default_scale]>]>
-    - define can_teleport <[root_entity].flag[dmodel_can_teleport]>
+    - define global_scale <[root_entity].flag[dmodel_global_scale].mul[<script[dmodels_config].parsed_key[default_scale]>]>
     - define center <[root_entity].location.with_pitch[0].above[1]>
     - define yaw_quaternion <location[0,1,0].to_axis_angle_quaternion[<[root_entity].flag[dmodel_yaw].add[180].to_radians.mul[-1]>]>
     - define orientation <[yaw_quaternion].mul[<[global_rotation]>]>
@@ -111,12 +110,11 @@ dmodels_move_to_frame:
                             - define data <[before_frame.data].as[location]>
             - define framedata.<[channel]> <[data]>
         - define this_part <[model_data.<[part_id]>]>
-        - define this_rots <[this_part.rotation].split[,]>
-        - define pose <quaternion[<[this_rots].get[1]>,<[this_rots].get[2]>,<[this_rots].get[3]>,<[this_rots].get[4]>]>
+        - define pose <[this_part.rotation]>
         - define parent_id <[this_part.parent]>
         - define parent_pos <location[<[parentage.<[parent_id]>.position]||0,0,0>]>
         - define parent_scale <location[<[parentage.<[parent_id]>.scale]||1,1,1>]>
-        - define parent_rot <[parentage.<[parent_id]>.rotation]||<quaternion[identity]>>
+        - define parent_rot <quaternion[<[parentage.<[parent_id]>.rotation]||identity>]>
         - define parent_raw_offset <location[<[model_data.<[parent_id]>.origin]||0,0,0>]>
         - define rel_offset <location[<[this_part.origin]>].sub[<[parent_raw_offset]>].proc[dmodels_mul_vecs].context[<[parent_scale]>]>
         - define rot_offset <[orientation].mul[<[parent_rot]>].transform[<[rel_offset]>]>
@@ -127,14 +125,11 @@ dmodels_move_to_frame:
         - define parentage.<[part_id]>.rotation <[new_rot]>
         - define parentage.<[part_id]>.scale <[new_scale]>
         - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
-            - if <[can_teleport]>:
-                - teleport <[ent]> <[center]>
+            - teleport <[ent]> <[center]>
             - adjust <[ent]> translation:<[new_pos].div[16].mul[0.25]>
-            - if <[ent].flag[dmodel_def_can_rotate]>:
-                - adjust <[ent]> left_rotation:<[orientation]>
-                - adjust <[ent]> right_rotation:<[new_rot]>
-            - if <[ent].flag[dmodel_def_can_scale]>:
-                - adjust <[ent]> scale:<[new_scale].proc[dmodels_mul_vecs].context[<[global_scale]>]>
+            - adjust <[ent]> left_rotation:<[orientation]>
+            - adjust <[ent]> right_rotation:<[new_rot]>
+            - adjust <[ent]> scale:<[new_scale].proc[dmodels_mul_vecs].context[<[global_scale]>]>
 
 dmodels_catmullrom_get_t:
     type: procedure
