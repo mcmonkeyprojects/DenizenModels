@@ -14,7 +14,7 @@ dmodels_command:
     type: command
     debug: false
     name: dmodels
-    usage: /dmodels [load/loadall/spawn/remove/animate/stopanimate/npcmodel/unload/unloadall]
+    usage: /dmodels [load/loadall/spawn/remove/animate/stopanimate/npcmodel/unload/unloadall/rotate/scale/color/viewrange]
     description: Manages Denizen Models.
     permission: dmodels.help
     tab completions:
@@ -80,7 +80,7 @@ dmodels_command:
             - flag server dmodels_temp_item_file:!
             - flag server dmodels_temp_atlas_file:!
             - flag server dmodels_last_pack_version:!
-            - narrate "<&[base]>Removed all DModels data from meory."
+            - narrate "<&[base]>Removed all DModels data from memory."
         - case spawn:
             - if !<context.args.get[2].exists>:
                 - narrate "<&[warning]>/dmodels spawn [model] <&[error]>- spawns a model at your position (must be loaded)"
@@ -153,6 +153,45 @@ dmodels_command:
                 - run dmodels_npc_despawn
                 - run dmodels_npc_spawn
             - narrate "<&[base]>NPC <npc.id.custom_color[emphasis]> (<npc.name><&[base]>) will now render as model <[model].custom_color[emphasis]>"
+        - case rotate:
+            - if !<context.args.get[2].exists>:
+                - narrate "<&[warning]>/dmodels rotate [rotation] <&[error]>- sets the rotation of the nearest real-spawned model to the given euler angles. Use '0,0,0' for default."
+                - stop
+            - define rotation <location[<context.args.get[2].split[,].parse[to_radians].comma_separated>]||null>
+            - if <[rotation]> == null:
+                - narrate "<&[error]>Given rotation is invalid must be in the form xrot,yrot,zrot, eg '90,0,0'."
+                - stop
+            - inject dmodels_get_target
+            - run dmodels_set_rotation def.root_entity:<[target]> def.quaternion:<proc[dmodels_quaternion_from_euler].context[<[rotation].xyz.split[,]>]>
+            - narrate "<&[base]>Model <[target].flag[dmodel_model_id].custom_color[emphasis]> rotation is now <[rotation].xyz.split[,].parse[to_degrees].parse[round_up_to_precision[0.01]].comma_separated>"
+        - case scale:
+            - if !<context.args.get[2].exists>:
+                - narrate "<&[warning]>/dmodels scale [scale] <&[error]>- sets the scale-multiplier of the nearest real-spawned model set to the given value. Use '1,1,1' for default."
+                - stop
+            - define scale <location[<context.args.get[2]>]||null>
+            - if <[scale]> == null:
+                - narrate "<&[error]>Given scale is invalid must be in the form 1,1,1."
+                - stop
+            - inject dmodels_get_target
+            - run dmodels_set_scale def.root_entity:<[target]> def.scale:<[scale]>
+        - case color:
+            - if !<context.args.get[2].exists>:
+                - narrate "<&[warning]>/dmodels color [color] <&[error]>- sets the color of the nearest real-spawned model to the given color. Use 'white' for default."
+                - stop
+            - define color <color[<context.args.get[2]>]||null>
+            - if <[color]> == null:
+                - narrate "<&[error]>Given color is invalid must be in the form red/255,0,0."
+            - inject dmodels_get_target
+            - run dmodels_set_color def.root_entity:<[target]> def.color:<[color]>
+            - narrate "<&[base]>Model <[target].flag[dmodel_model_id].custom_color[emphasis]> color is now <[color].hex>"
+        - case viewrange:
+            - if !<context.args.get[2].exists>:
+                - narrate "<&[warning]>/dmodels viewrange [range] <&[error]>- sets the view-range of the nearest real-spawned model to the given range (in blocks)."
+                - stop
+            - inject dmodels_get_target
+            - define view_range <context.args.get[2]>
+            - run dmodels_set_view_range def.root_entity:<[target]> def.view_range:<[view_range]>
+            - narrate "<&[base]>Model <[target].flag[dmodel_model_id].custom_color[emphasis]> view range is now <[view_range]>"
         # help
         - default:
             - if <player.has_permission[dmodels.load]||true>:
@@ -173,13 +212,21 @@ dmodels_command:
                 - narrate "<&[warning]>/dmodels stopanimate <&[error]>- causes the closest real-spawned model to stop animating"
             - if <player.has_permission[dmodels.npcmodel]||true>:
                 - narrate "<&[warning]>/dmodels npcmodel [model] <&[error]>- sets an NPC to render as a given model (must be loaded). Use 'none' to remove the model."
+            - if <player.has_permission[dmodels.rotate]||true>:
+                - narrate "<&[warning]>/dmodels rotate [rotation] <&[error]>- sets the rotation of the nearest real-spawned model to the given euler angles. Use '0,0,0' for default."
+            - if <player.has_permission[dmodels.scale]||true>:
+                - narrate "<&[warning]>/dmodels scale [scale] <&[error]>- sets the scale-multiplier of the nearest real-spawned model set to the given value. Use '1,1,1' for default."
+            - if <player.has_permission[dmodels.color]||true>:
+                - narrate "<&[warning]>/dmodels color [color] <&[error]>- sets the color of the nearest real-spawned model to the given color. Use 'white' for default."
+            - if <player.has_permission[dmodels.viewrange]||true>:
+                - narrate "<&[warning]>/dmodels viewrange [range] <&[error]>- sets the view-range of the nearest real-spawned model to the given range (in blocks)."
             - narrate "<&[warning]>/dmodels help <&[error]>- this help output"
 
 dmodels_get_target:
     type: task
     debug: false
     script:
-    - define target <player.location.find_entities[dmodel_part_stand].within[10].filter[has_flag[dmodel_model_id]].first||null>
+    - define target <player.location.find_entities[dmodel_part_display].within[10].filter[has_flag[dmodel_model_id]].first||null>
     - if !<[target].is_truthy>:
         - narrate "<&[error]>No spawned model is close enough. Are you near a model? If so, are you sure it's an independent real-spawned model (as opposed to fake-spawned, or separately attached)?"
         - stop
@@ -189,7 +236,7 @@ dmodels_tab_1:
     debug: false
     script:
     - define list <list>
-    - foreach load|loadall|spawn|remove|animate|stopanimate|npcmodel|help|unload|unloadall as:key:
+    - foreach load|loadall|spawn|remove|animate|stopanimate|npcmodel|help|unload|unloadall|rotate|scale|color|viewrange as:key:
         - if <player.has_permission[dmodels.<[key]>]||true>:
             - define list:->:<[key]>
     - determine <[list]>
@@ -217,10 +264,12 @@ dmodels_tab_2:
     - else if <[args].first> == npcmodel:
         - determine <server.flag[dmodels_data].keys.filter[starts_with[model_]].parse[after[model_]].include[none]>
     - else if <[args].first> == animate:
-        - define target <player.location.find_entities[dmodel_part_stand].within[10].filter[has_flag[dmodel_model_id]].first||null>
+        - define target <player.location.find_entities[dmodel_part_display].within[10].filter[has_flag[dmodel_model_id]].first||null>
         - if !<[target].is_truthy>:
             - determine <list>
         - determine <server.flag[dmodels_data.animations_<[target].flag[dmodel_model_id]>].keys||<list>>
+    - else if <[args].first> == color:
+        - determine <util.color_names>
     - determine <list>
 
 dmodels_gather_folder:

@@ -7,7 +7,10 @@
 dmodels_multi_load:
     type: task
     debug: false
-    definitions: list
+    definitions: list[A ListTag of valid model names, equivalent to the ones that can be input to 'dmodels_load_bbmodel']
+    description:
+    - Loads multiple models simultaneously, and ends the ~wait only after all models are loaded. This is faster than doing individual 'load' calls in a loop and waiting for each.
+    - This task should be ~waited for.
     script:
     - define key <util.random_uuid>
     - foreach <[list]> as:model:
@@ -29,20 +32,24 @@ dmodels_multiwaitable_load:
 dmodels_load_bbmodel:
     type: task
     debug: false
-    definitions: model_name
+    definitions: model_name[The name of the model to load, must correspond to the relevant '.bbmodel' file.]
+    description:
+    - Loads a model from source '.bbmodel' file by name into server data (flags). Also builds the resource pack entries for it.
+    - Should be called well in advance, when the model is added or changed. Does not need to be re-called until the model is changed again.
+    - This task should be ~waited for.
     script:
     - debug log "[DModels] loading <[model_name].custom_color[emphasis]>"
     # =============== Prep ===============
-    - define pack_root <script[dmodels_config].data_key[resource_pack_path]>
+    - define pack_root <script[dmodels_config].parsed_key[resource_pack_path]>
     - define models_root <[pack_root]>/assets/minecraft/models/item/dmodels/<[model_name]>
     - define textures_root <[pack_root]>/assets/minecraft/textures/dmodels/<[model_name]>
-    - define item_validate <item[<script[dmodels_config].data_key[item]>]||null>
+    - define item_validate <item[<script[dmodels_config].parsed_key[item]>]||null>
     - if <[item_validate]> == null:
       - debug error "[DModels] Item must be valid Example: potion"
       - stop
-    - define override_item_filepath <[pack_root]>/assets/minecraft/models/item/<script[dmodels_config].data_key[item]>.json
+    - define override_item_filepath <[pack_root]>/assets/minecraft/models/item/<script[dmodels_config].parsed_key[item]>.json
     - define file data/dmodels/<[model_name]>.bbmodel
-    - define scale_factor <element[2.285].div[4]>
+    - define scale_factor <element[0.25].div[4.0]>
     - define mc_texture_data <map>
     - flag server dmodels_data.temp_<[model_name]>:!
     # =============== BBModel loading and validation ===============
@@ -63,10 +70,10 @@ dmodels_load_bbmodel:
         - debug error "[DModels] Can't load bbmodel for '<[model_name]>' - file has no elements?"
         - stop
     # =============== Pack validation ===============
-    - define packversion 12
+    - define packversion 13
     - if !<util.has_file[<[pack_root]>/pack.mcmeta]>:
         - run dmodels_multiwaitable_filewrite def.key:core def.path:<[pack_root]>/pack.mcmeta def.data:<map.with[pack].as[<map[pack_format=<[packversion]>;description=dModels_AutoPack_Default]>].to_json[native_types=true;indent=4].utf8_encode>
-    - else if <server.flag[dmodels_last_pack_version]||0> != packversion:
+    - else if <server.flag[dmodels_last_pack_version]||0> != <[packversion]>:
         - ~fileread path:<[pack_root]>/pack.mcmeta save:mcmeta
         - define mcmeta_data <util.parse_yaml[<entry[mcmeta].data.utf8_decode>]>
         - define mcmeta_data.pack.pack_format <[packversion]>
@@ -135,9 +142,12 @@ dmodels_load_bbmodel:
             - else:
                 - foreach <[animator.keyframes]> as:keyframe:
                     - definemap anim_map channel:<[keyframe.channel]> time:<[keyframe.time]> interpolation:<[keyframe.interpolation]>
+                    - if <[anim_map.interpolation]> not in catmullrom|linear|step:
+                        - debug error "[DModels] Limitation while loading bbmodel for '<[model_name]>': unknown interpolation type '<[anim_map.interpolation]>', defaulting to 'linear'."
+                        - define anim_map.interpolation linear
                     - define data_points <[keyframe.data_points].first>
-                    - if <[anim_map.channel]> == rotation:
-                        - define anim_map.data <[data_points.x].trim.to_radians>,<[data_points.y].trim.to_radians>,<[data_points.z].trim.to_radians>
+                    - if <[keyframe.channel]> == rotation:
+                        - define anim_map.data <proc[dmodels_quaternion_from_euler].context[<[data_points.x].trim.to_radians.mul[-1]>|<[data_points.y].trim.to_radians.mul[-1]>|<[data_points.z].trim.to_radians>]>
                     - else:
                         - define anim_map.data <[data_points.x].trim>,<[data_points.y].trim>,<[data_points.z].trim>
                     - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames:->:<[anim_map]>
@@ -181,7 +191,7 @@ dmodels_load_bbmodel:
         - flag server dmodels_temp_item_reading:!
         - define override_item_data <util.parse_yaml[<entry[override_item].data.utf8_decode>]>
     - else:
-        - definemap override_item_data parent:minecraft:item/generated textures:<map[layer0=minecraft:item/<script[dmodels_config].data_key[item]>]>
+        - definemap override_item_data parent:minecraft:item/generated textures:<map[layer0=minecraft:item/<script[dmodels_config].parsed_key[item]>]>
     # NOTE: THE BELOW SECTION MUST NOT WAIT! For item override file interlock.
     - define overrides_changed false
     - foreach <server.flag[dmodels_data.temp_<[model_name]>.raw_outlines]> as:outline:
@@ -215,7 +225,7 @@ dmodels_load_bbmodel:
             #### Item override building
             - definemap json_group name:<[outline.name].to_lowercase> color:0 children:<util.list_numbers[from=0;to=<[child_count]>]> origin:<[outline_origin].mul[<[scale_factor]>].xyz.split[,]>
             - define model_json.groups <list[<[json_group]>]>
-            - define model_json.display.head.translation <list[32|25|32]>
+            - define model_json.display.head.translation <list[32|32|32]>
             - define model_json.display.head.scale <list[4|4|4]>
             - define modelpath item/dmodels/<[model_name]>/<[outline.name].to_lowercase>
             - run dmodels_multiwaitable_filewrite def.key:<[model_name]> def.path:<[models_root]>/<[outline.name].to_lowercase>.json def.data:<[model_json].to_json[native_types=true;indent=4].utf8_encode>
@@ -229,8 +239,10 @@ dmodels_load_bbmodel:
                 - define cmd <[min_cmd]>
                 - define override_item_data.overrides:->:<map[predicate=<map[custom_model_data=<[cmd]>]>].with[model].as[<[modelpath]>]>
                 - define overrides_changed true
-            - define outline.item <script[dmodels_config].data_key[item]>[custom_model_data=<[cmd]>]
+            - define outline.item <script[dmodels_config].parsed_key[item]>[custom_model_data=<[cmd]>;color=white]
         # This sets the actual live usage flag data
+        - define rotation <[outline.rotation].split[,]>
+        - define outline.rotation <proc[dmodels_quaternion_from_euler].context[<[rotation].parse[to_radians]>]>
         - flag server dmodels_data.model_<[model_name]>.<[outline.uuid]>:<[outline]>
     - if <[overrides_changed]>:
         - define override_file_json <[override_item_data].to_json[native_types=true;indent=4].utf8_encode>
@@ -261,6 +273,7 @@ dmodels_facefix:
     - define mul_x <element[16].div[<[resolution.width]>]>
     - define mul_y <element[16].div[<[resolution.height]>]>
     - define out.uv <list[<[uv].get[1].mul[<[mul_x]>]>|<[uv].get[2].mul[<[mul_y]>]>|<[uv].get[3].mul[<[mul_x]>]>|<[uv].get[4].mul[<[mul_y]>]>]>
+    - define out.tintindex 0
     - determine <[out]>
 
 dmodels_loader_addchild:
@@ -305,3 +318,15 @@ dmodels_loader_readoutline:
     - flag server dmodels_data.temp_<[model_name]>.raw_outlines.<[new_outline.uuid]>:<[new_outline]>
     - foreach <[raw_children]> as:child:
         - run dmodels_loader_addchild def.model_name:<[model_name]> def.parent:<[outline]> def.child:<[child]>
+
+dmodels_quaternion_from_euler:
+    type: procedure
+    debug: false
+    definitions: x|y|z
+    description: Converts euler angles in radians to a quaternion.
+    script:
+    - define x_q <location[1,0,0].to_axis_angle_quaternion[<[x]>]>
+    - define y_q <location[0,1,0].to_axis_angle_quaternion[<[y]>]>
+    - define z_q <location[0,0,1].to_axis_angle_quaternion[<[z]>]>
+    - determine <[x_q].mul[<[y_q]>].mul[<[z_q]>]>
+
