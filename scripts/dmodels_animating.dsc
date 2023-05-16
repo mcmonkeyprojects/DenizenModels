@@ -65,34 +65,29 @@ dmodels_move_to_frame:
     - define orientation <[yaw_quaternion].mul[<[global_rotation]>]>
     - define parentage <map>
     - foreach <[animation_data.animators]> key:part_id as:animator:
+        - define framedata.position <location[0,0,0]>
+        - define framedata.scale <location[1,1,1]>
+        - define framedata.rotation <quaternion[identity]>
         - foreach position|rotation|scale as:channel:
             - define relevant_frames <[animator.frames].filter[get[channel].equals[<[channel]>]]>
             - define before_frame <[relevant_frames].filter[get[time].is_less_than_or_equal_to[<[timespot]>]].last||null>
             - define after_frame <[relevant_frames].filter[get[time].is_more_than_or_equal_to[<[timespot]>]].first||null>
-            - choose <[channel]>:
-              - case position:
-                - define default <location[0,0,0]>
-              - case scale:
-                - define default <location[1,1,1]>
-              - case rotation:
-                - define default <quaternion[identity]>
             - if <[before_frame]> == null:
                 - define before_frame <[after_frame]>
             - if <[after_frame]> == null:
                 - define after_frame <[before_frame]>
-            - if <[before_frame]> == null:
-                - define data <[default]>
-            - else:
+            - if <[before_frame]> != null:
                 - define time_range <[after_frame.time].sub[<[before_frame.time]>]>
                 - if <[time_range]> == 0:
                     - define time_percent 0
                 - else:
                     - define time_percent <[timespot].sub[<[before_frame.time]>].div[<[time_range]>]>
-                - if <[channel]> == rotation:
-                    - define data <[before_frame.data].as[quaternion].slerp[end=<[after_frame.data].as[quaternion]>;amount=<[time_percent]>]>
-                - else:
-                    - choose <[before_frame.interpolation]>:
-                        - case catmullrom:
+                - choose <[before_frame.interpolation]>:
+                    - case catmullrom:
+                        - if <[channel]> == rotation:
+                            # TODO: Actual impl? If this even exists in blockbench.
+                            - define data <[before_frame.data].as[quaternion].slerp[end=<[after_frame.data]>;amount=<[time_percent]>]>
+                        - else:
                             - define before_extra <[relevant_frames].filter[get[time].is_less_than[<[before_frame.time]>]].last||null>
                             - if <[before_extra]> == null:
                                 - define before_extra <[animation_data.loop].equals[loop].if_true[<[relevant_frames].last>].if_false[<[before_frame]>]>
@@ -104,11 +99,14 @@ dmodels_move_to_frame:
                             - define p2 <[after_frame.data].as[location]>
                             - define p3 <[after_extra.data].as[location]>
                             - define data <proc[dmodels_catmullrom_proc].context[<[p0]>|<[p1]>|<[p2]>|<[p3]>|<[time_percent]>]>
-                        - case linear:
+                    - case linear:
+                        - if <[channel]> == rotation:
+                            - define data <[before_frame.data].as[quaternion].slerp[end=<[after_frame.data]>;amount=<[time_percent]>]>
+                        - else:
                             - define data <[after_frame.data].as[location].sub[<[before_frame.data]>].mul[<[time_percent]>].add[<[before_frame.data]>]>
-                        - case step:
-                            - define data <[before_frame.data].as[location]>
-            - define framedata.<[channel]> <[data]>
+                    - case step:
+                        - define data <[before_frame.data].as[location]>
+                - define framedata.<[channel]> <[data]>
         - define this_part <[model_data.<[part_id]>]>
         - define pose <[this_part.rotation]>
         - define parent_id <[this_part.parent]>
