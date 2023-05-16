@@ -19,7 +19,7 @@ dmodels_spawn_model:
     - if !<server.has_flag[dmodels_data.model_<[model_name]>]>:
         - debug error "[DModels] cannot spawn model <[model_name]>, model not loaded"
         - stop
-    - define center <[location].with_pitch[0].above[1]>
+    - define center <[location].with_pitch[0].below[1]>
     - define scale <[scale].if_null[<location[1,1,1]>].mul[<script[dmodels_config].parsed_key[default_scale]>]>
     - define rotation <[rotation].if_null[<quaternion[identity]>]>
     - define yaw_quaternion <location[0,1,0].to_axis_angle_quaternion[<[location].yaw.add[180].to_radians.mul[-1]>]>
@@ -57,7 +57,7 @@ dmodels_spawn_model:
         - define parentage.<[id]>.position <[new_pos]>
         - define parentage.<[id]>.rotation <[new_rot]>
         - define translation <[new_pos].proc[dmodels_mul_vecs].context[<[scale]>].div[16].mul[0.25]>
-        - define to_spawn_ent dmodel_part_display[item=<[part.item]>;display=HEAD;translation=<[translation]>;left_rotation=<[orientation]>;scale=<[scale]>;right_rotation=<[pose]>]
+        - define to_spawn_ent dmodel_part_display[item=<[part.item]>;display=HEAD;translation=<[translation]>;left_rotation=<[orientation].mul[<[pose]>]>;scale=<[scale]>]
         - if <[fake_to].exists>:
             - fakespawn <[to_spawn_ent]> <[center]> players:<[fake_to]> save:spawned d:infinite
             - define spawned <entry[spawned].faked_entity>
@@ -86,7 +86,7 @@ dmodels_reset_model_position:
     - if <[model_data]> == null:
         - debug error "<&[Error]> Could not update model for root entity <[root_entity]> as it does not exist."
         - stop
-    - define center <[root_entity].location.with_pitch[0].above[1]>
+    - define center <[root_entity].location.with_pitch[0].below[1]>
     - define global_scale <[root_entity].flag[dmodel_global_scale].mul[<script[dmodels_config].parsed_key[default_scale]>]>
     - define yaw_quaternion <location[0,1,0].to_axis_angle_quaternion[<[root_entity].flag[dmodel_yaw].add[180].to_radians.mul[-1]>]>
     - define orientation <[yaw_quaternion].mul[<[root_entity].flag[dmodel_global_rotation]>]>
@@ -109,8 +109,7 @@ dmodels_reset_model_position:
           - if <[root_part].flag[dmodel_def_part_id]> == <[id]>:
             - teleport <[root_part]> <[center]>
             - adjust <[root_part]> translation:<[new_pos].proc[dmodels_mul_vecs].context[<[global_scale]>].div[16].mul[0.25]>
-            - adjust <[root_part]> left_rotation:<[orientation]>
-            - adjust <[root_part]> right_rotation:<[pose]>
+            - adjust <[root_part]> left_rotation:<[orientation].mul[<[pose]>]>
             - adjust <[root_part]> scale:<[global_scale]>
 
 dmodels_mul_vecs:

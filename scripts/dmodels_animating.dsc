@@ -60,7 +60,7 @@ dmodels_move_to_frame:
                 - flag server dmodels_anim_active.<[root_entity].uuid>:!
     - define global_rotation <[root_entity].flag[dmodel_global_rotation]>
     - define global_scale <[root_entity].flag[dmodel_global_scale].mul[<script[dmodels_config].parsed_key[default_scale]>]>
-    - define center <[root_entity].location.with_pitch[0].above[1]>
+    - define center <[root_entity].location.with_pitch[0].below[1]>
     - define yaw_quaternion <location[0,1,0].to_axis_angle_quaternion[<[root_entity].flag[dmodel_yaw].add[180].to_radians.mul[-1]>]>
     - define orientation <[yaw_quaternion].mul[<[global_rotation]>]>
     - define parentage <map>
@@ -125,8 +125,7 @@ dmodels_move_to_frame:
         - foreach <[root_entity].flag[dmodel_anim_part.<[part_id]>]||<list>> as:ent:
             - teleport <[ent]> <[center]>
             - adjust <[ent]> translation:<[new_pos].div[16].mul[0.25]>
-            - adjust <[ent]> left_rotation:<[orientation]>
-            - adjust <[ent]> right_rotation:<[new_rot]>
+            - adjust <[ent]> left_rotation:<[orientation].mul[<[new_rot]>]>
             - adjust <[ent]> scale:<[new_scale].proc[dmodels_mul_vecs].context[<[global_scale]>]>
 
 dmodels_catmullrom_get_t:
