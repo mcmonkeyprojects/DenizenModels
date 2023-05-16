@@ -44,9 +44,8 @@ dmodels_move_to_frame:
     script:
     - define model_data <server.flag[dmodels_data.model_<[root_entity].flag[dmodel_model_id]>]>
     - define animation_data <server.flag[dmodels_data.animations_<[root_entity].flag[dmodel_model_id]>.<[animation]>]>
-    - define loop <[animation_data.loop]>
     - if <[timespot]> > <[animation_data.length]>:
-        - choose <[loop]>:
+        - choose <[animation_data.loop]>:
             - case loop:
                 - define timespot <[timespot].mod[<[animation_data.length]>]>
             - case once:
@@ -97,10 +96,10 @@ dmodels_move_to_frame:
                         - case catmullrom:
                             - define before_extra <[relevant_frames].filter[get[time].is_less_than[<[before_frame.time]>]].last||null>
                             - if <[before_extra]> == null:
-                                - define before_extra <[loop].equals[loop].if_true[<[relevant_frames].last>].if_false[<[before_frame]>]>
+                                - define before_extra <[animation_data.loop].equals[loop].if_true[<[relevant_frames].last>].if_false[<[before_frame]>]>
                             - define after_extra <[relevant_frames].filter[get[time].is_more_than[<[after_frame.time]>]].first||null>
                             - if <[after_extra]> == null:
-                                - define after_extra <[loop].equals[loop].if_true[<[relevant_frames].first>].if_false[<[after_frame]>]>
+                                - define after_extra <[animation_data.loop].equals[loop].if_true[<[relevant_frames].first>].if_false[<[after_frame]>]>
                             - define p0 <[before_extra.data].as[location]>
                             - define p1 <[before_frame.data].as[location]>
                             - define p2 <[after_frame.data].as[location]>
@@ -215,7 +214,7 @@ dmodels_animator_world:
                         - run dmodels_animate def.root_entity:<[root]> def.animation:<[preferred]>
                 - if !<[root].has_flag[dmodels_animation_id]>:
                     - run dmodels_reset_model_position def.root_entity:<[root]>
-        on tick server_flagged:dmodels_anim_active:
+        on tick server_flagged:dmodels_anim_active priority:-10:
         - foreach <server.flag[dmodels_anim_active]> as:root:
             - if <[root].is_spawned||false>:
                 - run dmodels_move_to_frame def.root_entity:<[root]> def.animation:<[root].flag[dmodels_animation_id]> def.timespot:<[root].flag[dmodels_anim_time].div[20]>

@@ -3,17 +3,6 @@
 # Refer to the header of "dmodels_main.dsc" for more information.
 ###########################
 
-
-dmodel_part_stand:
-    type: entity
-    debug: false
-    entity_type: armor_stand
-    mechanisms:
-        marker: true
-        gravity: false
-        visible: false
-        is_small: true
-
 dmodel_part_display:
     type: entity
     debug: false
@@ -31,7 +20,7 @@ dmodels_spawn_model:
         - debug error "[DModels] cannot spawn model <[model_name]>, model not loaded"
         - stop
     - define center <[location].with_pitch[0].above[1]>
-    - define scale <[scale].if_null[<location[1,1,1]>].mul[<proc[dmodels_default_scale]>]>
+    - define scale <[scale].if_null[<location[1,1,1]>].mul[<script[dmodels_config].parsed_key[default_scale]>]>
     - define rotation <[rotation].if_null[<quaternion[identity]>]>
     - define yaw_quaternion <location[0,1,0].to_axis_angle_quaternion[<[location].yaw.add[180].to_radians.mul[-1]>]>
     - define orientation <[yaw_quaternion].mul[<[rotation]>]>
@@ -41,7 +30,7 @@ dmodels_spawn_model:
     - else:
         - spawn dmodel_part_display <[center]> save:root
         - define root <entry[root].spawned_entity>
-    - define view_range <[view_range].if_null[<script[dmodels_config].data_key[view_range]>]>
+    - define view_range <[view_range].if_null[<script[dmodels_config].parsed_key[view_range]>]>
     - flag <[root]> dmodel_model_id:<[model_name]>
     - flag <[root]> dmodel_root:<[root]>
     - flag <[root]> dmodel_yaw:<[location].yaw>
@@ -129,15 +118,6 @@ dmodels_reset_model_position:
             - if <[root_part].flag[dmodel_def_can_scale]>:
                 - adjust <[root_part]> scale:<[global_scale]>
 
-# During the loading process the scale is shrunken down for items to allow bigger models in
-# block bench so this brings it back up to default scale in-game (this is an estimate)
-dmodels_default_scale:
-    type: procedure
-    debug: false
-    script:
-    - determine 2.2
-
-# Highly recommend implementing this as a tag
 dmodels_mul_vecs:
     type: procedure
     debug: false
@@ -176,8 +156,10 @@ dmodels_set_rotation:
     definitions: root_entity[The root EntityTag from 'dmodels_spawn_model'] | quaternion[QuaternionTag, 'identity' for default] | update[If not specified as 'false', will immediately update the model's position]
     description: Sets the global rotation of a model.
     script:
-    - if <quaternion[<[quaternion]>]||null> == null:
-        - debug error "<&[error]>Invalid input the rotation must be a quaternion."
+    - define quaternion <quaternion[<[quaternion]>]||null>
+    - if <[quaternion]> == null:
+        - debug error "<&[error]>Invalid input, the rotation must be a quaternion."
+        - stop
     - flag <[root_entity]> dmodel_global_rotation:<[quaternion]>
     - if <[update]||true>:
         - run dmodels_reset_model_position def.root_entity:<[root_entity]>
@@ -188,8 +170,10 @@ dmodels_set_scale:
     definitions: root_entity[The root EntityTag from 'dmodels_spawn_model'] | scale[LocationTag, '1,1,1' for default] | update[If not specified as 'false', will immediately update the model's position]
     description: Sets the global scale of the model.
     script:
-    - if <location[<[scale]>]||null> == null:
-        - debug error "<&[error]>Invalid input the scale must be a location."
+    - define scale <location[<[scale]>]||null>
+    - if <[scale]> == null:
+        - debug error "<&[error]>Invalid input, the scale must be a location."
+        - stop
     - flag <[root_entity]> dmodel_global_scale:<[scale]>
     - if <[update]||true>:
         - run dmodels_reset_model_position def.root_entity:<[root_entity]>
@@ -200,9 +184,11 @@ dmodels_set_color:
     definitions: root_entity[The root EntityTag from 'dmodels_spawn_model'] | color[ColorTag of the new item-tint to apply, 'white' for default]
     description: Sets the item-color of the model.
     script:
-    - if <color[<[color]>]||null> == null:
-        - debug error "<&[error]>Invalid input must be a color."
-    - flag <[root_entity]> dmodels_color:<[color]>
+    - define color <color[<[color]>]||null>
+    - if <[color]> == null:
+        - debug error "<&[error]>Invalid input, must be a color."
+        - stop
+    - flag <[root_entity]> dmodel_color:<[color]>
     - foreach <[root_entity].flag[dmodel_parts]> as:part:
         - define item <[part].item>
         - adjust <[item]> color:<[color]> save:item
@@ -216,5 +202,4 @@ dmodels_set_view_range:
     description: Sets the view-range of the model.
     script:
     - flag <[root_entity]> dmodel_view_range:<[view_range]>
-    - foreach <[root_entity].flag[dmodel_parts]> as:part:
-        - adjust <[part]> view_range:<[view_range]>
+    - adjust <[root_entity].flag[dmodel_parts]> view_range:<[view_range]>

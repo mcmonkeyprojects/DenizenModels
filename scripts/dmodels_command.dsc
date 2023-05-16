@@ -264,7 +264,7 @@ dmodels_tab_2:
     - else if <[args].first> == npcmodel:
         - determine <server.flag[dmodels_data].keys.filter[starts_with[model_]].parse[after[model_]].include[none]>
     - else if <[args].first> == animate:
-        - define target <player.location.find_entities[dmodel_part_stand].within[10].filter[has_flag[dmodel_model_id]].first||null>
+        - define target <player.location.find_entities[dmodel_part_display].within[10].filter[has_flag[dmodel_model_id]].first||null>
         - if !<[target].is_truthy>:
             - determine <list>
         - determine <server.flag[dmodels_data.animations_<[target].flag[dmodel_model_id]>].keys||<list>>

@@ -146,3 +146,5 @@ dmodels_config:
     # You can set the resource pack path to a custom path if you want.
     # Note that the default Denizen config requires this path start under "data/"
     resource_pack_path: data/dmodels/res_pack
+    # During the loading process the scale is shrunken down exactly 2.2 for items to allow bigger models in block bench so this brings it back up to default scale in-game (this is an estimate)
+    default_scale: 2.2

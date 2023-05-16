@@ -40,16 +40,16 @@ dmodels_load_bbmodel:
     script:
     - debug log "[DModels] loading <[model_name].custom_color[emphasis]>"
     # =============== Prep ===============
-    - define pack_root <script[dmodels_config].data_key[resource_pack_path]>
+    - define pack_root <script[dmodels_config].parsed_key[resource_pack_path]>
     - define models_root <[pack_root]>/assets/minecraft/models/item/dmodels/<[model_name]>
     - define textures_root <[pack_root]>/assets/minecraft/textures/dmodels/<[model_name]>
-    - define item_validate <item[<script[dmodels_config].data_key[item]>]||null>
+    - define item_validate <item[<script[dmodels_config].parsed_key[item]>]||null>
     - if <[item_validate]> == null:
       - debug error "[DModels] Item must be valid Example: potion"
       - stop
-    - define override_item_filepath <[pack_root]>/assets/minecraft/models/item/<script[dmodels_config].data_key[item]>.json
+    - define override_item_filepath <[pack_root]>/assets/minecraft/models/item/<script[dmodels_config].parsed_key[item]>.json
     - define file data/dmodels/<[model_name]>.bbmodel
-    - define scale_factor <static[<element[0.25].div[4.0]>]>
+    - define scale_factor <element[0.25].div[4.0]>
     - define mc_texture_data <map>
     - flag server dmodels_data.temp_<[model_name]>:!
     # =============== BBModel loading and validation ===============
@@ -187,7 +187,7 @@ dmodels_load_bbmodel:
         - flag server dmodels_temp_item_reading:!
         - define override_item_data <util.parse_yaml[<entry[override_item].data.utf8_decode>]>
     - else:
-        - definemap override_item_data parent:minecraft:item/generated textures:<map[layer0=minecraft:item/<script[dmodels_config].data_key[item]>]>
+        - definemap override_item_data parent:minecraft:item/generated textures:<map[layer0=minecraft:item/<script[dmodels_config].parsed_key[item]>]>
     # NOTE: THE BELOW SECTION MUST NOT WAIT! For item override file interlock.
     - define overrides_changed false
     - foreach <server.flag[dmodels_data.temp_<[model_name]>.raw_outlines]> as:outline:
@@ -235,10 +235,10 @@ dmodels_load_bbmodel:
                 - define cmd <[min_cmd]>
                 - define override_item_data.overrides:->:<map[predicate=<map[custom_model_data=<[cmd]>]>].with[model].as[<[modelpath]>]>
                 - define overrides_changed true
-            - define outline.item <script[dmodels_config].data_key[item]>[custom_model_data=<[cmd]>;color=<color[white]>]
+            - define outline.item <script[dmodels_config].parsed_key[item]>[custom_model_data=<[cmd]>;color=white]
         # This sets the actual live usage flag data
         - define rotation <[outline.rotation].split[,]>
-        - define outline.rotation <proc[dmodels_quaternion_from_euler].context[<[rotation].get[1].to_radians>|<[rotation].get[2].to_radians>|<[rotation].get[3].to_radians>]>
+        - define outline.rotation <proc[dmodels_quaternion_from_euler].context[<[rotation].parse[to_radians]>]>
         - flag server dmodels_data.model_<[model_name]>.<[outline.uuid]>:<[outline]>
     - if <[overrides_changed]>:
         - define override_file_json <[override_item_data].to_json[native_types=true;indent=4].utf8_encode>
@@ -315,7 +315,6 @@ dmodels_loader_readoutline:
     - foreach <[raw_children]> as:child:
         - run dmodels_loader_addchild def.model_name:<[model_name]> def.parent:<[outline]> def.child:<[child]>
 
-# Might wanna add from_euler to the quaternion tag
 dmodels_quaternion_from_euler:
     type: procedure
     debug: false
