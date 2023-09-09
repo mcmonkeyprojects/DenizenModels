@@ -19,7 +19,7 @@ dmodels_spawn_model:
     - if !<server.has_flag[dmodels_data.model_<[model_name]>]>:
         - debug error "[DModels] cannot spawn model <[model_name]>, model not loaded"
         - stop
-    - define center <[location].with_pitch[0].below[1]>
+    - define center <[location].with_pose[0,0].below[1]>
     - define scale <[scale].if_null[<location[1,1,1]>].mul[<script[dmodels_config].parsed_key[default_scale]>]>
     - define rotation <[rotation].if_null[<quaternion[identity]>]>
     - define yaw_quaternion <location[0,1,0].to_axis_angle_quaternion[<[location].yaw.add[180].to_radians.mul[-1]>]>
