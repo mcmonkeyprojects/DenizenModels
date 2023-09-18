@@ -150,12 +150,23 @@ dmodels_load_bbmodel:
             - else:
                 - foreach <[animator.keyframes]> as:keyframe:
                     - definemap anim_map channel:<[keyframe.channel]> time:<[keyframe.time]> interpolation:<[keyframe.interpolation]>
-                    - if <[anim_map.interpolation]> not in catmullrom|linear|step:
+                    - if <[anim_map.interpolation]> not in catmullrom|linear|step|bezier:
                         - debug error "[DModels] Limitation while loading bbmodel for '<[model_name]>': unknown interpolation type '<[anim_map.interpolation]>', defaulting to 'linear'."
                         - define anim_map.interpolation linear
+                    - if <[anim_map.interpolation]> == bezier:
+                        - if <[keyframe.channel]> == rotation:
+                            - define anim_map.left_time <proc[dmodels_quaternion_from_euler].context[<[keyframe.bezier_left_time].parse[trim.to_radians]>]>
+                            - define anim_map.left_value <proc[dmodels_quaternion_from_euler].context[<[keyframe.bezier_left_value].parse[trim.to_radians]>]>
+                            - define anim_map.right_time <proc[dmodels_quaternion_from_euler].context[<[keyframe.bezier_right_time].parse[trim.to_radians]>]>
+                            - define anim_map.right_value <proc[dmodels_quaternion_from_euler].context[<[keyframe.bezier_right_value].parse[trim.to_radians]>]>
+                        - else:
+                            - define anim_map.left_time <[keyframe.bezier_left_time].parse[trim].comma_separated>
+                            - define anim_map.left_value <[keyframe.bezier_left_value].parse[trim].comma_separated>
+                            - define anim_map.right_time <[keyframe.bezier_right_time].parse[trim].comma_separated>
+                            - define anim_map.right_value <[keyframe.bezier_right_value].parse[trim].comma_separated>
                     - define data_points <[keyframe.data_points].first>
                     - if <[keyframe.channel]> == rotation:
-                        - define anim_map.data <proc[dmodels_quaternion_from_euler].context[<[data_points.x].trim.to_radians.mul[-1]>|<[data_points.y].trim.to_radians.mul[-1]>|<[data_points.z].trim.to_radians>]>
+                        - define anim_map.data <proc[dmodels_quaternion_from_euler].context[<[data_points.x].trim.to_radians.mul[-1]>|<[data_points.y].trim.to_radians.mul[-1]>|<[data_points.z].trim.to_radians>].normalize>
                     - else:
                         - define anim_map.data <[data_points.x].trim>,<[data_points.y].trim>,<[data_points.z].trim>
                     - define animation_list.<[animation.name]>.animators.<[o_uuid]>.frames:->:<[anim_map]>
