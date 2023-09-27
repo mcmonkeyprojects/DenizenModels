@@ -9,9 +9,9 @@
 # @contributors Max^
 # @thanks Darwin, Max^, kalebbroo, sharklaserss - for helping with reference models, testing, ideas, etc
 # @date 2022/06/01
-# @updated 2023/09/08
+# @updated 2023/09/26
 # @denizen-build REL-1793
-# @script-version 2.1
+# @script-version 2.2
 #
 # This takes BlockBench "BBModel" files, converts them to a client-ready resource pack and Denizen internal data,
 # then is able to display them in minecraft and even animate them, by spawning and moving item display entities with resource pack items.
@@ -134,9 +134,9 @@ dmodels_config:
     # You can set the resource pack path to a custom path if you want.
     # Note that the default Denizen config requires this path start under "data/"
     resource_pack_path: data/dmodels/res_pack
-    # During the loading process the scale is shrunken down exactly 2.2 for items to allow bigger models in block bench so this brings it back up to default scale in-game (this is an estimate)
-    default_scale: 2.2
+    # During the loading process the scale is shrunken down for items to allow bigger models in block bench so this brings it back up to default scale in-game (this is an estimate)
+    default_scale: 4.8
     # You can optionally set the json indent for the resource pack to save space (0 for example).
     resource_pack_indent: 4
     # Set the resource pack version https://minecraft.fandom.com/wiki/Pack_format
-    resource_pack_version: 13
+    resource_pack_version: 15
